@@ -5,6 +5,7 @@ const getAllNotes = async (req, res) => {
   try {
     const status = req.query.status === 'archived' ? true : false;
     const searchTerm = req.query.search || '';
+    const tagId = req.query.tagId || null;
 
     let query = `
       SELECT 
@@ -14,13 +15,25 @@ const getAllNotes = async (req, res) => {
       FROM notes n
       LEFT JOIN note_tags nt ON n.id = nt.note_id
       LEFT JOIN tags t ON nt.tag_id = t.id
-      WHERE n.archived = ?
     `;
-    const params = [status];
+    const params = [];
+
+    let whereClauses = ['n.archived = ?'];
+    params.push(status);
 
     if (searchTerm) {
-      query += ' AND (n.title LIKE ? OR n.content LIKE ?)';
+      whereClauses.push('(n.title LIKE ? OR n.content LIKE ?)');
       params.push(`%${searchTerm}%`, `%${searchTerm}%`);
+    }
+
+    if (tagId) {
+      // This subquery ensures we only get notes that have the specified tag.
+      whereClauses.push('EXISTS (SELECT 1 FROM note_tags nt2 WHERE nt2.note_id = n.id AND nt2.tag_id = ?)');
+      params.push(tagId);
+    }
+
+    if (whereClauses.length > 0) {
+      query += ` WHERE ${whereClauses.join(' AND ')}`;
     }
 
     query += ' GROUP BY n.id ORDER BY n.updated_at DESC';

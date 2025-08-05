@@ -1,23 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Spinner, Nav, Tab, Badge, Form } from 'react-bootstrap';
 import { FaTrash, FaPlus, FaArchive, FaInbox, FaTimes, FaArrowRight } from 'react-icons/fa';
+import { Typeahead } from 'react-bootstrap-typeahead';
+import 'react-bootstrap-typeahead/css/Typeahead.css';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const TagManager = ({ tags, onAddTag, onRemoveTag }) => {
-  const [newTag, setNewTag] = useState('');
+const TagManager = ({ noteTags, allTags, onAddTag, onRemoveTag }) => {
+  const [selected, setSelected] = useState([]);
 
-  const handleAdd = () => {
-    if (newTag.trim() === '') return;
-    onAddTag(newTag.trim());
-    setNewTag('');
+  const handleAdd = (selectedItems) => {
+    if (selectedItems.length === 0) return;
+    const newTag = selectedItems[0];
+
+    if (typeof newTag === 'string') {
+      onAddTag(newTag);
+    } 
+    else if (newTag.name) {
+      if (!(noteTags || []).some(t => t.id === newTag.id)) {
+        onAddTag(newTag.name);
+      }
+    }
+    setSelected([]);
   };
 
   return (
     <div className="tag-manager mt-2 mb-3 p-2 border rounded">
-      <div className="d-flex flex-wrap align-items-center">
-        {(tags || []).map(tag => (
-          <Badge key={tag.id} pill bg="primary" className="me-2 mb-2 d-flex align-items-center">
+      <div className="d-flex flex-wrap align-items-center mb-2">
+        {(noteTags || []).map(tag => (
+          <Badge key={tag.id} pill bg="primary" className="me-2 mb-2 d-flex align-items-center tag-item">
             {tag.name}
             <Button variant="link" size="sm" className="p-0 ms-1 text-white" onClick={() => onRemoveTag(tag.id)}>
               <FaTimes />
@@ -25,17 +36,16 @@ const TagManager = ({ tags, onAddTag, onRemoveTag }) => {
           </Badge>
         ))}
       </div>
-      <Form.Group className="d-flex">
-        <Form.Control
-          type="text"
-          size="sm"
-          placeholder="新增標籤..."
-          value={newTag}
-          onChange={(e) => setNewTag(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
-        />
-        <Button variant="outline-secondary" size="sm" onClick={handleAdd}>新增</Button>
-      </Form.Group>
+      <Typeahead
+        id="tag-typeahead"
+        allowNew
+        labelKey="name"
+        options={allTags}
+        placeholder="新增或搜尋標籤..."
+        selected={selected}
+        onChange={handleAdd}
+        size="sm"
+      />
     </div>
   );
 };
@@ -168,7 +178,7 @@ const WeeklyWorkList = ({ title, items, setItems }) => {
   );
 };
 
-const NoteEditor = ({ activeNote, onContentChange, onTitleChange, onSave, onDelete, onArchive, onUnarchive, onAddTag, onRemoveTag, onCarryOver }) => {
+const NoteEditor = ({ activeNote, allTags, onContentChange, onTitleChange, onSave, onDelete, onArchive, onUnarchive, onAddTag, onRemoveTag, onCarryOver }) => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -254,7 +264,7 @@ const NoteEditor = ({ activeNote, onContentChange, onTitleChange, onSave, onDele
           </Button>
         </div>
       </div>
-      <TagManager tags={activeNote.tags || []} onAddTag={onAddTag} onRemoveTag={onRemoveTag} />
+      <TagManager noteTags={activeNote.tags} allTags={allTags} onAddTag={onAddTag} onRemoveTag={onRemoveTag} />
       {renderEditor()}
     </div>
   );

@@ -31,13 +31,9 @@ function App() {
   }, [theme]);
 
   const loadNotes = useCallback(() => {
-    api.fetchNotes(noteStatusFilter, searchQuery)
+    api.fetchNotes(noteStatusFilter, searchQuery, selectedTag?.id)
       .then(response => {
-        let filteredNotes = response.data;
-        if (selectedTag) {
-          filteredNotes = filteredNotes.filter(note => note.tags.some(tag => tag.id === selectedTag.id));
-        }
-        setNotes(filteredNotes);
+        setNotes(response.data);
       })
       .catch(() => toast.error('無法載入筆記，請稍後再試。'));
   }, [noteStatusFilter, searchQuery, selectedTag]);
@@ -300,6 +296,7 @@ function App() {
         />
         <NoteEditor 
           activeNote={activeNote}
+          allTags={tags}
           onContentChange={handleContentChange}
           onTitleChange={handleTitleChange}
           onSave={handleSave}

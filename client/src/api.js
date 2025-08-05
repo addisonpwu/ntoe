@@ -5,7 +5,13 @@ const apiClient = axios.create({
 });
 
 // Note APIs
-export const fetchNotes = (status = 'current', search = '') => apiClient.get('/notes', { params: { status, search } });
+export const fetchNotes = (status = 'current', search = '', tagId = null) => {
+  const params = { status, search };
+  if (tagId) {
+    params.tagId = tagId;
+  }
+  return apiClient.get('/notes', { params });
+};
 export const createNote = (note) => apiClient.post('/notes', note);
 export const updateNote = (id, note) => apiClient.put(`/notes/${id}`, note);
 export const deleteNote = (id) => apiClient.delete(`/notes/${id}`);
