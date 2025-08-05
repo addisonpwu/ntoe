@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 // API Routes
-app.use('/notes', noteRoutes);
+app.use('/api/notes', noteRoutes);
 
 // API endpoint to check database connection
 app.get('/api/health', async (req, res) => {
@@ -34,8 +34,8 @@ const startServer = async () => {
   while (retries) {
     try {
       await setupDatabase();
-      app.listen(port, () => {
-        console.log(`Server listening at http://localhost:${port}`);
+      app.listen(port, '0.0.0.0', () => {
+        console.log(`Server listening at http://0.0.0.0:${port}`);
       });
       break; // Exit loop if successful
     } catch (err) {

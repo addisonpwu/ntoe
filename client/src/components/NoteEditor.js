@@ -140,7 +140,7 @@ const NoteEditor = ({ activeNote, onContentChange, onTitleChange, onSave, onDele
     return () => {
       clearTimeout(handler);
     };
-  }, [activeNote?.title, activeNote?.content, activeNote?.id, onSave]);
+  }, [activeNote, activeNote?.title, activeNote?.content, activeNote?.id, onSave]);
 
   if (!activeNote) {
     return <div className="text-center text-muted p-4">選擇一則筆記或建立新筆記。</div>;

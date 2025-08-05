@@ -8,8 +8,8 @@ const NoteList = ({ notes, activeNote, onNoteSelect, onNewNote }) => {
           <i className="bi bi-plus-lg me-2"></i>新增筆記
         </button>
         <ul className="dropdown-menu">
-          <li><a className="dropdown-item" href="#" onClick={() => onNewNote('normal')}>一般筆記</a></li>
-          <li><a className="dropdown-item" href="#" onClick={() => onNewNote('weekly', null, null)}>週記</a></li>
+          <li><button className="dropdown-item" type="button" onClick={() => onNewNote('normal')}>一般筆記</button></li>
+          <li><button className="dropdown-item" type="button" onClick={() => onNewNote('weekly', null, null)}>週記</button></li>
         </ul>
       </div>
       <ul className="list-group flex-grow-1 overflow-auto">
