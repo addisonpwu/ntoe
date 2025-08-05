@@ -1,29 +1,65 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Spinner, Nav, Tab } from 'react-bootstrap';
-import { FaTrash, FaPlus } from 'react-icons/fa';
+import { Button, Spinner, Nav, Tab, Badge, Form } from 'react-bootstrap';
+import { FaTrash, FaPlus, FaArchive, FaInbox, FaTimes, FaArrowRight } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
+const TagManager = ({ tags, onAddTag, onRemoveTag }) => {
+  const [newTag, setNewTag] = useState('');
+
+  const handleAdd = () => {
+    if (newTag.trim() === '') return;
+    onAddTag(newTag.trim());
+    setNewTag('');
+  };
+
+  return (
+    <div className="tag-manager mt-2 mb-3 p-2 border rounded">
+      <div className="d-flex flex-wrap align-items-center">
+        {(tags || []).map(tag => (
+          <Badge key={tag.id} pill bg="primary" className="me-2 mb-2 d-flex align-items-center">
+            {tag.name}
+            <Button variant="link" size="sm" className="p-0 ms-1 text-white" onClick={() => onRemoveTag(tag.id)}>
+              <FaTimes />
+            </Button>
+          </Badge>
+        ))}
+      </div>
+      <Form.Group className="d-flex">
+        <Form.Control
+          type="text"
+          size="sm"
+          placeholder="新增標籤..."
+          value={newTag}
+          onChange={(e) => setNewTag(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
+        />
+        <Button variant="outline-secondary" size="sm" onClick={handleAdd}>新增</Button>
+      </Form.Group>
+    </div>
+  );
+};
 
 const WeeklyWorkList = ({ title, items, setItems }) => {
   const [newItemText, setNewItemText] = useState('');
   const [editingIndex, setEditingIndex] = useState(null);
-  const [editingField, setEditingField] = useState(null); // 'text' or 'notes'
+  const [editingField, setEditingField] = useState(null);
   const [editText, setEditText] = useState('');
 
   const handleAddItem = () => {
     if (newItemText.trim() === '') return;
-    const updatedItems = [...items, { text: newItemText.trim(), completed: false, notes: '' }];
+    const updatedItems = [...(items || []), { text: newItemText.trim(), completed: false, notes: '' }];
     setItems(updatedItems);
     setNewItemText('');
   };
 
   const handleRemoveItem = (index) => {
-    const updatedItems = items.filter((_, i) => i !== index);
+    const updatedItems = (items || []).filter((_, i) => i !== index);
     setItems(updatedItems);
   };
 
   const handleToggleCompleted = (index) => {
-    const updatedItems = items.map((item, i) => 
+    const updatedItems = (items || []).map((item, i) => 
       i === index ? { ...item, completed: !item.completed } : item
     );
     setItems(updatedItems);
@@ -42,7 +78,7 @@ const WeeklyWorkList = ({ title, items, setItems }) => {
   const handleEditSave = () => {
     if (editingIndex === null) return;
 
-    const updatedItems = items.map((item, i) => {
+    const updatedItems = (items || []).map((item, i) => {
       if (i === editingIndex) {
         return { ...item, [editingField]: editText };
       }
@@ -64,7 +100,7 @@ const WeeklyWorkList = ({ title, items, setItems }) => {
     <div className="weekly-note-section mb-4">
       <h5>{title}</h5>
       <ul className="list-group mb-2">
-        {items.map((item, index) => (
+        {(items || []).map((item, index) => (
           <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
             <div className="d-flex align-items-center flex-grow-1">
               <input 
@@ -132,7 +168,7 @@ const WeeklyWorkList = ({ title, items, setItems }) => {
   );
 };
 
-const NoteEditor = ({ activeNote, onContentChange, onTitleChange, onSave, onDelete }) => {
+const NoteEditor = ({ activeNote, onContentChange, onTitleChange, onSave, onDelete, onArchive, onUnarchive, onAddTag, onRemoveTag, onCarryOver }) => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -146,7 +182,7 @@ const NoteEditor = ({ activeNote, onContentChange, onTitleChange, onSave, onDele
     return () => {
       clearTimeout(handler);
     };
-  }, [activeNote?.title, activeNote?.content]);
+  }, [activeNote?.title, activeNote?.content, activeNote?.tags]);
 
   if (!activeNote) {
     return <div className="text-center text-muted p-4">選擇一則筆記或建立新筆記。</div>;
@@ -199,11 +235,26 @@ const NoteEditor = ({ activeNote, onContentChange, onTitleChange, onSave, onDele
         <input type="text" className="form-control form-control-lg me-2" value={activeNote.title} onChange={onTitleChange} />
         <div className="d-flex align-items-center">
           {isSaving && <Spinner animation="border" size="sm" className="me-2" />}
+          {activeNote.type === 'weekly' && !activeNote.archived && (
+            <Button variant="outline-success" onClick={onCarryOver} className="me-2">
+              <FaArrowRight className="me-1" /> 轉移
+            </Button>
+          )}
+          {activeNote.archived ? (
+            <Button variant="secondary" onClick={onUnarchive} className="me-2">
+              <FaInbox className="me-1" /> 還原
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={onArchive} className="me-2">
+              <FaArchive className="me-1" /> 封存
+            </Button>
+          )}
           <Button variant="danger" onClick={onDelete}>
             <FaTrash className="me-1" /> 刪除
           </Button>
         </div>
       </div>
+      <TagManager tags={activeNote.tags || []} onAddTag={onAddTag} onRemoveTag={onRemoveTag} />
       {renderEditor()}
     </div>
   );

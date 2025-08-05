@@ -57,6 +57,16 @@
   color: white;
 }
 
+.note-tags .badge {
+  font-size: 0.7em;
+}
+
+/* Tag Cloud Styles */
+.tag-cloud .tag-badge {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
 /* NoteEditor Styles */
 .note-editor-container {
   flex-grow: 1;
@@ -78,7 +88,7 @@
 
 /* Markdown Editor/Preview Styles */
 .markdown-editor {
-  resize: none; /* Disable textarea resize handle */
+  resize: none;
   border: none;
   padding: 0;
 }

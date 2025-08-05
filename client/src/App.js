@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -12,21 +12,57 @@ import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 
 function App() {
   const [notes, setNotes] = useState([]);
+  const [tags, setTags] = useState([]);
   const [activeNote, setActiveNote] = useState(null);
   const [showWeeklyNoteModal, setShowWeeklyNoteModal] = useState(false);
   const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [noteStatusFilter, setNoteStatusFilter] = useState('current');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState(null);
+  const [itemsToCarryOver, setItemsToCarryOver] = useState([]);
+  const [sourceNoteForCarryOver, setSourceNoteForCarryOver] = useState(null);
 
   useEffect(() => {
     document.body.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  const loadNotes = useCallback(() => {
+    api.fetchNotes(noteStatusFilter, searchQuery)
+      .then(response => {
+        let filteredNotes = response.data;
+        if (selectedTag) {
+          filteredNotes = filteredNotes.filter(note => note.tags.some(tag => tag.id === selectedTag.id));
+        }
+        setNotes(filteredNotes);
+      })
+      .catch(() => toast.error('無法載入筆記，請稍後再試。'));
+  }, [noteStatusFilter, searchQuery, selectedTag]);
+
+  const loadTags = useCallback(() => {
+    api.fetchTags()
+      .then(response => setTags(response.data))
+      .catch(() => toast.error('無法載入標籤。'));
+  }, []);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      loadNotes();
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, loadNotes]);
+
   useEffect(() => {
     loadNotes();
-  }, []);
+  }, [noteStatusFilter, selectedTag, loadNotes]);
+
+  useEffect(() => {
+    loadTags();
+  }, [loadTags]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
@@ -34,12 +70,6 @@ function App() {
 
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
-  };
-
-  const loadNotes = () => {
-    api.fetchNotes()
-      .then(response => setNotes(response.data))
-      .catch(() => toast.error('無法載入筆記，請稍後再試。'));
   };
 
   const handleNoteSelect = (note) => {
@@ -100,6 +130,8 @@ function App() {
 
   const handleNewNote = (type, startDate = null, endDate = null) => {
     if (type === 'weekly' && (!startDate || !endDate)) {
+      setItemsToCarryOver([]);
+      setSourceNoteForCarryOver(null);
       setShowWeeklyNoteModal(true);
       return;
     }
@@ -109,7 +141,7 @@ function App() {
 
     if (type === 'weekly') {
       title = `週記 (${startDate} ~ ${endDate})`;
-      content = { keyFocus: [], regularWork: [] };
+      content = { keyFocus: itemsToCarryOver, regularWork: [] };
     } else {
       title = '新筆記';
       content = '...';
@@ -119,10 +151,43 @@ function App() {
 
     api.createNote(newNote)
       .then(response => {
+        const newNoteResponse = response.data;
         toast.success('筆記已建立！');
-        loadNotes();
-        handleNoteSelect(response.data);
         setShowWeeklyNoteModal(false);
+
+        if (sourceNoteForCarryOver && itemsToCarryOver.length > 0) {
+          const sourceContent = sourceNoteForCarryOver.content;
+          const itemsToRemoveTexts = new Set(itemsToCarryOver.map(item => item.text));
+
+          const updatedKeyFocus = (sourceContent.keyFocus || []).filter(item => !itemsToRemoveTexts.has(item.text));
+          const updatedRegularWork = (sourceContent.regularWork || []).filter(item => !itemsToRemoveTexts.has(item.text));
+
+          const updatedSourceNotePayload = {
+            title: sourceNoteForCarryOver.title,
+            content: {
+              keyFocus: updatedKeyFocus,
+              regularWork: updatedRegularWork
+            }
+          };
+          
+          api.updateNote(sourceNoteForCarryOver.id, updatedSourceNotePayload)
+            .then(() => {
+              toast.success(`已從來源週記中移除 ${itemsToCarryOver.length} 個項目。`);
+            })
+            .catch(() => {
+                toast.error('更新來源週記失敗。');
+            })
+            .finally(() => {
+                setSourceNoteForCarryOver(null);
+                setItemsToCarryOver([]);
+                loadNotes(); 
+                handleNoteSelect(newNoteResponse);
+            });
+        } else {
+            setItemsToCarryOver([]);
+            loadNotes();
+            handleNoteSelect(newNoteResponse);
+        }
       })
       .catch(() => toast.error('建立筆記失敗。'));
   };
@@ -151,6 +216,66 @@ function App() {
       .catch(() => toast.error('刪除筆記失敗。'));
   };
 
+  const handleArchive = () => {
+    if (!activeNote) return;
+    api.archiveNote(activeNote.id)
+      .then(() => {
+        toast.success('筆記已封存。');
+        loadNotes();
+        setActiveNote(null);
+      })
+      .catch(() => toast.error('封存筆記失敗。'));
+  };
+
+  const handleUnarchive = () => {
+    if (!activeNote) return;
+    api.unarchiveNote(activeNote.id)
+      .then(() => {
+        toast.success('筆記已還原。');
+        loadNotes();
+        setActiveNote(null);
+      })
+      .catch(() => toast.error('還原筆記失敗。'));
+  };
+
+  const handleAddTag = (tagName) => {
+    if (!activeNote) return;
+    api.addTagToNote(activeNote.id, tagName)
+      .then(response => {
+        const newTag = response.data.tag;
+        setActiveNote(prev => ({ ...prev, tags: [...prev.tags, newTag] }));
+        loadTags();
+      })
+      .catch(() => toast.error('新增標籤失敗。'));
+  };
+
+  const handleRemoveTag = (tagId) => {
+    if (!activeNote) return;
+    api.removeTagFromNote(activeNote.id, tagId)
+      .then(() => {
+        setActiveNote(prev => ({ ...prev, tags: prev.tags.filter(t => t.id !== tagId) }));
+      })
+      .catch(() => toast.error('移除標籤失敗。'));
+  };
+
+  const handleCarryOver = () => {
+    if (!activeNote || activeNote.type !== 'weekly') return;
+
+    const unfinishedItems = [
+      ...(activeNote.content.keyFocus || []),
+      ...(activeNote.content.regularWork || [])
+    ].filter(item => !item.completed);
+
+    if (unfinishedItems.length === 0) {
+      toast.info('沒有未完成的項目可以轉移。');
+      return;
+    }
+
+    setItemsToCarryOver(unfinishedItems.map(item => ({ ...item, completed: false })));
+    setSourceNoteForCarryOver(activeNote);
+    setShowWeeklyNoteModal(true);
+  };
+
   return (
     <div className="app-container">
       <Header 
@@ -161,10 +286,17 @@ function App() {
       <div className="main-content">
         <NoteList 
           notes={notes}
+          tags={tags}
           activeNote={activeNote}
           onNoteSelect={handleNoteSelect}
           onNewNote={handleNewNote}
           isOpen={isSidebarOpen}
+          noteStatusFilter={noteStatusFilter}
+          setNoteStatusFilter={setNoteStatusFilter}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedTag={selectedTag}
+          setSelectedTag={setSelectedTag}
         />
         <NoteEditor 
           activeNote={activeNote}
@@ -172,6 +304,11 @@ function App() {
           onTitleChange={handleTitleChange}
           onSave={handleSave}
           onDelete={handleDeleteRequest}
+          onArchive={handleArchive}
+          onUnarchive={handleUnarchive}
+          onAddTag={handleAddTag}
+          onRemoveTag={handleRemoveTag}
+          onCarryOver={handleCarryOver}
         />
       </div>
 
