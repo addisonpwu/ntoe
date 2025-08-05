@@ -1,12 +1,20 @@
 import React from 'react';
+import { Navbar, Button } from 'react-bootstrap';
+import { FaSun, FaMoon, FaBars } from 'react-icons/fa';
 
-const Header = () => {
+const Header = ({ theme, toggleTheme, toggleSidebar }) => {
   return (
-    <header className="app-header d-flex align-items-center justify-content-between">
-      <a className="navbar-brand" href="#">
+    <Navbar as="header" className="app-header">
+      <Button variant="outline-secondary" onClick={toggleSidebar} className="d-md-none me-2">
+        <FaBars />
+      </Button>
+      <Navbar.Brand href="#">
         <i className="bi bi-journal-text me-2"></i> 我的筆記
-      </a>
-    </header>
+      </Navbar.Brand>
+      <Button variant="outline-secondary" onClick={toggleTheme} className="ms-auto">
+        {theme === 'light' ? <FaMoon /> : <FaSun />}
+      </Button>
+    </Navbar>
   );
 };
 

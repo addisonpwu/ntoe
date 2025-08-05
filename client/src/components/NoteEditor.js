@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Button, Spinner, Nav, Tab } from 'react-bootstrap';
+import { FaTrash, FaPlus } from 'react-icons/fa';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const WeeklyWorkList = ({ title, items, setItems }) => {
   const [newItemText, setNewItemText] = useState('');
@@ -108,7 +112,7 @@ const WeeklyWorkList = ({ title, items, setItems }) => {
                   {item.notes || '添加備註'}
                 </small>
               )}
-              <button className="btn btn-sm btn-outline-danger" onClick={() => handleRemoveItem(index)}><i className="bi bi-trash"></i></button>
+              <Button variant="outline-danger" size="sm" onClick={() => handleRemoveItem(index)}><FaTrash /></Button>
             </div>
           </li>
         ))}
@@ -122,25 +126,27 @@ const WeeklyWorkList = ({ title, items, setItems }) => {
           onKeyDown={(e) => { if (e.key === 'Enter') handleAddItem(); }} 
           placeholder={`新增${title}...`}
         />
-        <button className="btn btn-outline-primary" type="button" onClick={handleAddItem}><i className="bi bi-plus-lg"></i> 新增</button>
+        <Button variant="outline-primary" onClick={handleAddItem}><FaPlus /> 新增</Button>
       </div>
     </div>
   );
 };
 
 const NoteEditor = ({ activeNote, onContentChange, onTitleChange, onSave, onDelete }) => {
-  // Auto-save effect
-  useEffect(() => {
-    if (!activeNote || !activeNote.id) return; // Don't auto-save if no active note or it's a new unsaved note
+  const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    if (!activeNote || !activeNote.id) return;
+
+    setIsSaving(true);
     const handler = setTimeout(() => {
-      onSave();
-    }, 1000); // Debounce for 1 second
+      onSave().finally(() => setIsSaving(false));
+    }, 1500);
 
     return () => {
       clearTimeout(handler);
     };
-  }, [activeNote, activeNote?.title, activeNote?.content, activeNote?.id, onSave]);
+  }, [activeNote?.title, activeNote?.content]);
 
   if (!activeNote) {
     return <div className="text-center text-muted p-4">選擇一則筆記或建立新筆記。</div>;
@@ -159,11 +165,30 @@ const NoteEditor = ({ activeNote, onContentChange, onTitleChange, onSave, onDele
       )
     } else {
       return (
-        <textarea 
-          className="form-control flex-grow-1"
-          value={activeNote.content}
-          onChange={(e) => onContentChange(e.target.value)}
-        />
+        <Tab.Container defaultActiveKey="edit">
+          <Nav variant="tabs" className="mb-2">
+            <Nav.Item>
+              <Nav.Link eventKey="edit">編輯</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link eventKey="preview">預覽</Nav.Link>
+            </Nav.Item>
+          </Nav>
+          <Tab.Content className="flex-grow-1 d-flex flex-column">
+            <Tab.Pane eventKey="edit" className="flex-grow-1 d-flex flex-column">
+              <textarea 
+                className="form-control flex-grow-1 markdown-editor"
+                value={activeNote.content}
+                onChange={(e) => onContentChange(e.target.value)}
+              />
+            </Tab.Pane>
+            <Tab.Pane eventKey="preview" className="markdown-preview p-3 border rounded flex-grow-1">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {activeNote.content}
+              </ReactMarkdown>
+            </Tab.Pane>
+          </Tab.Content>
+        </Tab.Container>
       )
     }
   }
@@ -172,8 +197,11 @@ const NoteEditor = ({ activeNote, onContentChange, onTitleChange, onSave, onDele
     <div className="col-md-9 note-editor-container d-flex flex-column">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <input type="text" className="form-control form-control-lg me-2" value={activeNote.title} onChange={onTitleChange} />
-        <div>
-          <button className="btn btn-danger" onClick={onDelete}><i className="bi bi-trash"></i> 刪除</button>
+        <div className="d-flex align-items-center">
+          {isSaving && <Spinner animation="border" size="sm" className="me-2" />}
+          <Button variant="danger" onClick={onDelete}>
+            <FaTrash className="me-1" /> 刪除
+          </Button>
         </div>
       </div>
       {renderEditor()}
