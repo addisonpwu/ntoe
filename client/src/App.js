@@ -13,6 +13,7 @@ import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 function App() {
   const [notes, setNotes] = useState([]);
   const [tags, setTags] = useState([]);
+  const [folders, setFolders] = useState([]);
   const [activeNote, setActiveNote] = useState(null);
   const [showWeeklyNoteModal, setShowWeeklyNoteModal] = useState(false);
   const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
@@ -22,6 +23,7 @@ function App() {
   const [noteStatusFilter, setNoteStatusFilter] = useState('current');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState(null);
+  const [selectedFolderId, setSelectedFolderId] = useState('inbox');
   const [itemsToCarryOver, setItemsToCarryOver] = useState([]);
   const [sourceNoteForCarryOver, setSourceNoteForCarryOver] = useState(null);
 
@@ -31,17 +33,21 @@ function App() {
   }, [theme]);
 
   const loadNotes = useCallback(() => {
-    api.fetchNotes(noteStatusFilter, searchQuery, selectedTag?.id)
-      .then(response => {
-        setNotes(response.data);
-      })
+    api.fetchNotes(noteStatusFilter, searchQuery, selectedTag?.id, selectedFolderId)
+      .then(response => setNotes(response.data))
       .catch(() => toast.error('無法載入筆記，請稍後再試。'));
-  }, [noteStatusFilter, searchQuery, selectedTag]);
+  }, [noteStatusFilter, searchQuery, selectedTag, selectedFolderId]);
 
   const loadTags = useCallback(() => {
     api.fetchTags()
       .then(response => setTags(response.data))
       .catch(() => toast.error('無法載入標籤。'));
+  }, []);
+
+  const loadFolders = useCallback(() => {
+    api.fetchFolders()
+      .then(response => setFolders(response.data))
+      .catch(() => toast.error('無法載入資料夾。'));
   }, []);
 
   useEffect(() => {
@@ -54,11 +60,12 @@ function App() {
 
   useEffect(() => {
     loadNotes();
-  }, [noteStatusFilter, selectedTag, loadNotes]);
+  }, [noteStatusFilter, selectedTag, selectedFolderId, loadNotes]);
 
   useEffect(() => {
     loadTags();
-  }, [loadTags]);
+    loadFolders();
+  }, [loadTags, loadFolders]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
@@ -134,6 +141,7 @@ function App() {
 
     let content;
     let title;
+    const folderId = selectedFolderId === 'inbox' ? null : selectedFolderId;
 
     if (type === 'weekly') {
       title = `週記 (${startDate} ~ ${endDate})`;
@@ -143,7 +151,7 @@ function App() {
       content = '...';
     }
 
-    const newNote = { title, content, type };
+    const newNote = { title, content, type, folderId };
 
     api.createNote(newNote)
       .then(response => {
@@ -272,6 +280,26 @@ function App() {
     setShowWeeklyNoteModal(true);
   };
 
+  const handleCreateFolder = (name) => {
+    api.createFolder(name)
+      .then(() => {
+        toast.success(`資料夾 '${name}' 已建立！`);
+        loadFolders();
+      })
+      .catch(() => toast.error('建立資料夾失敗。'));
+  };
+
+  const handleMoveNote = (folderId) => {
+    if (!activeNote) return;
+    api.moveNote(activeNote.id, folderId)
+      .then(() => {
+        toast.success('筆記已移動。');
+        loadNotes();
+        setActiveNote(null);
+      })
+      .catch(() => toast.error('移動筆記失敗。'));
+  };
+
   return (
     <div className="app-container">
       <Header 
@@ -283,6 +311,7 @@ function App() {
         <NoteList 
           notes={notes}
           tags={tags}
+          folders={folders}
           activeNote={activeNote}
           onNoteSelect={handleNoteSelect}
           onNewNote={handleNewNote}
@@ -293,10 +322,14 @@ function App() {
           setSearchQuery={setSearchQuery}
           selectedTag={selectedTag}
           setSelectedTag={setSelectedTag}
+          selectedFolderId={selectedFolderId}
+          setSelectedFolderId={setSelectedFolderId}
+          onCreateFolder={handleCreateFolder}
         />
         <NoteEditor 
           activeNote={activeNote}
           allTags={tags}
+          folders={folders}
           onContentChange={handleContentChange}
           onTitleChange={handleTitleChange}
           onSave={handleSave}
@@ -306,6 +339,7 @@ function App() {
           onAddTag={handleAddTag}
           onRemoveTag={handleRemoveTag}
           onCarryOver={handleCarryOver}
+          onMoveNote={handleMoveNote}
         />
       </div>
 

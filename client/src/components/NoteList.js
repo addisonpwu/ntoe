@@ -1,10 +1,11 @@
-import React from 'react';
-import { Button, Dropdown, Nav, Form, InputGroup, Badge } from 'react-bootstrap';
-import { FaPlus, FaStickyNote, FaCalendarWeek, FaSearch, FaTimes } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { Button, Dropdown, Nav, Form, InputGroup, Badge, ListGroup } from 'react-bootstrap';
+import { FaPlus, FaStickyNote, FaCalendarWeek, FaSearch, FaTimes, FaFolder, FaInbox } from 'react-icons/fa';
 
 const NoteList = ({ 
   notes, 
   tags,
+  folders,
   activeNote, 
   onNoteSelect, 
   onNewNote, 
@@ -14,8 +15,19 @@ const NoteList = ({
   searchQuery, 
   setSearchQuery, 
   selectedTag, 
-  setSelectedTag 
+  setSelectedTag, 
+  selectedFolderId, 
+  setSelectedFolderId, 
+  onCreateFolder 
 }) => {
+  const [newFolderName, setNewFolderName] = useState('');
+
+  const handleCreateFolder = () => {
+    if (newFolderName.trim() === '') return;
+    onCreateFolder(newFolderName.trim());
+    setNewFolderName('');
+  };
+
   return (
     <div className={`note-list-sidebar ${isOpen ? 'open' : ''}`}>
       <div className="note-list-container d-flex flex-column p-2">
@@ -44,6 +56,30 @@ const NoteList = ({
             />
           </InputGroup>
         </Form.Group>
+
+        <div className="mb-2">
+          <h5>資料夾</h5>
+          <ListGroup>
+            <ListGroup.Item action active={selectedFolderId === 'inbox'} onClick={() => setSelectedFolderId('inbox')}>
+              <FaInbox className="me-2" /> 預設文件夾
+            </ListGroup.Item>
+            {folders.map(folder => (
+              <ListGroup.Item key={folder.id} action active={selectedFolderId === folder.id} onClick={() => setSelectedFolderId(folder.id)}>
+                <FaFolder className="me-2" /> {folder.name}
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+          <InputGroup className="mt-2">
+            <Form.Control
+              size="sm"
+              placeholder="新增資料夾..."
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder(); }}
+            />
+            <Button variant="outline-secondary" size="sm" onClick={handleCreateFolder}>新增</Button>
+          </InputGroup>
+        </div>
 
         <div className="mb-2">
           <h5>標籤</h5>

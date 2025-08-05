@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Spinner, Nav, Tab, Badge, Form } from 'react-bootstrap';
-import { FaTrash, FaPlus, FaArchive, FaInbox, FaTimes, FaArrowRight } from 'react-icons/fa';
+import { Button, Spinner, Nav, Tab, Badge, Form, Dropdown } from 'react-bootstrap';
+import { FaTrash, FaPlus, FaArchive, FaInbox, FaTimes, FaArrowRight, FaFolderOpen } from 'react-icons/fa';
 import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import ReactMarkdown from 'react-markdown';
@@ -178,7 +178,7 @@ const WeeklyWorkList = ({ title, items, setItems }) => {
   );
 };
 
-const NoteEditor = ({ activeNote, allTags, onContentChange, onTitleChange, onSave, onDelete, onArchive, onUnarchive, onAddTag, onRemoveTag, onCarryOver }) => {
+const NoteEditor = ({ activeNote, allTags, folders, onContentChange, onTitleChange, onSave, onDelete, onArchive, onUnarchive, onAddTag, onRemoveTag, onCarryOver, onMoveNote }) => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -245,6 +245,17 @@ const NoteEditor = ({ activeNote, allTags, onContentChange, onTitleChange, onSav
         <input type="text" className="form-control form-control-lg me-2" value={activeNote.title} onChange={onTitleChange} />
         <div className="d-flex align-items-center">
           {isSaving && <Spinner animation="border" size="sm" className="me-2" />}
+          <Dropdown className="me-2">
+            <Dropdown.Toggle variant="outline-secondary" id="dropdown-move">
+              <FaFolderOpen className="me-1" /> 移動
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              <Dropdown.Item onClick={() => onMoveNote(null)}>預設文件夾</Dropdown.Item>
+              {folders.map(folder => (
+                <Dropdown.Item key={folder.id} onClick={() => onMoveNote(folder.id)}>{folder.name}</Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
           {activeNote.type === 'weekly' && !activeNote.archived && (
             <Button variant="outline-success" onClick={onCarryOver} className="me-2">
               <FaArrowRight className="me-1" /> 轉移

@@ -11,14 +11,23 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// Function to create tables if they don't exist
+// Function to create and update tables
 const setupDatabase = async () => {
   let connection;
   try {
     connection = await pool.getConnection();
     console.log("Connected to database. Setting up tables...");
 
-    // Notes table
+    // Folders table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS folders (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL
+      );
+    `);
+    console.log("Table 'folders' is ready.");
+
+    // Notes table - Create if not exists
     await connection.query(`
       CREATE TABLE IF NOT EXISTS notes (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -31,6 +40,15 @@ const setupDatabase = async () => {
       );
     `);
     console.log("Table 'notes' is ready.");
+
+    // Add folder_id column to notes table if it doesn't exist
+    const [columns] = await connection.query("SHOW COLUMNS FROM notes LIKE 'folder_id'");
+    if (columns.length === 0) {
+      console.log("Adding 'folder_id' column to 'notes' table...");
+      await connection.query('ALTER TABLE notes ADD COLUMN folder_id INT NULL AFTER archived');
+      await connection.query('ALTER TABLE notes ADD CONSTRAINT fk_folder_id FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE SET NULL');
+      console.log("Column 'folder_id' added.");
+    }
 
     // Tags table
     await connection.query(`

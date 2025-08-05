@@ -7,6 +7,7 @@ const tagController = require('../controllers/tagController');
 router.get('/', noteController.getAllNotes);
 router.post('/', noteController.createNote);
 router.put('/:id', noteController.updateNote);
+router.put('/:id/move', noteController.moveNote);
 router.delete('/:id', noteController.deleteNote);
 router.post('/:id/archive', noteController.archiveNote);
 router.post('/:id/unarchive', noteController.unarchiveNote);

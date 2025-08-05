@@ -6,6 +6,7 @@ const getAllNotes = async (req, res) => {
     const status = req.query.status === 'archived' ? true : false;
     const searchTerm = req.query.search || '';
     const tagId = req.query.tagId || null;
+    const folderId = req.query.folderId || null;
 
     let query = `
       SELECT 
@@ -21,13 +22,19 @@ const getAllNotes = async (req, res) => {
     let whereClauses = ['n.archived = ?'];
     params.push(status);
 
+    if (folderId === 'inbox') {
+      whereClauses.push('n.folder_id IS NULL');
+    } else if (folderId) {
+      whereClauses.push('n.folder_id = ?');
+      params.push(folderId);
+    }
+
     if (searchTerm) {
       whereClauses.push('(n.title LIKE ? OR n.content LIKE ?)');
       params.push(`%${searchTerm}%`, `%${searchTerm}%`);
     }
 
     if (tagId) {
-      // This subquery ensures we only get notes that have the specified tag.
       whereClauses.push('EXISTS (SELECT 1 FROM note_tags nt2 WHERE nt2.note_id = n.id AND nt2.tag_id = ?)');
       params.push(tagId);
     }
@@ -40,7 +47,6 @@ const getAllNotes = async (req, res) => {
 
     const [rows] = await pool.query(query, params);
 
-    // Process rows to format tags
     const notes = rows.map(note => ({
       ...note,
       tags: note.tag_ids ? note.tag_ids.split(',').map((id, index) => ({
@@ -59,9 +65,9 @@ const getAllNotes = async (req, res) => {
 // Create a new note
 const createNote = async (req, res) => {
   try {
-    const { title, content, type } = req.body;
+    const { title, content, type, folderId } = req.body;
     const contentJSON = JSON.stringify(content);
-    const [result] = await pool.query('INSERT INTO notes (title, content, type) VALUES (?, ?, ?)', [title, contentJSON, type]);
+    const [result] = await pool.query('INSERT INTO notes (title, content, type, folder_id) VALUES (?, ?, ?, ?)', [title, contentJSON, type, folderId]);
     const [[newNote]] = await pool.query('SELECT * FROM notes WHERE id = ?', [result.insertId]);
     res.status(201).json({ ...newNote, tags: [] });
   } catch (error) {
@@ -84,12 +90,25 @@ const updateNote = async (req, res) => {
   }
 };
 
+// Move a note to a folder
+const moveNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { folderId } = req.body;
+    await pool.query('UPDATE notes SET folder_id = ? WHERE id = ?', [folderId, id]);
+    res.json({ message: 'Note moved successfully' });
+  } catch (error) {
+    console.error(`PUT /api/notes/${id}/move Error:`, error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Delete a note
 const deleteNote = async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query('DELETE FROM notes WHERE id = ?', [id]);
-    res.status(204).send(); // No content
+    res.status(204).send();
   } catch (error) {
     console.error(`DELETE /api/notes/${id} Error:`, error);
     res.status(500).json({ error: error.message });
@@ -124,6 +143,7 @@ module.exports = {
   getAllNotes,
   createNote,
   updateNote,
+  moveNote,
   deleteNote,
   archiveNote,
   unarchiveNote
