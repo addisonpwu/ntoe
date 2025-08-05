@@ -1,0 +1,110 @@
+.container-fluid {
+  min-height: 100vh;
+}
+
+/* Header Styles */
+.app-header {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.app-header .navbar-brand {
+  color: white;
+  font-weight: bold;
+}
+
+/* NoteList Styles */
+.note-list-container {
+  background-color: var(--light-bg);
+  border-right: 1px solid var(--border-color);
+}
+
+.note-list-item {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.note-list-item:hover {
+  background-color: var(--active-bg);
+}
+
+.note-list-item.active {
+  background-color: var(--primary-color) !important;
+  color: white;
+}
+
+.note-list-item.active .badge {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  color: white;
+}
+
+.note-list-item .badge {
+  font-size: 0.75em;
+  padding: 0.3em 0.6em;
+  border-radius: 0.25rem;
+}
+
+/* NoteEditor Styles */
+.note-editor-container {
+  padding: 1.5rem;
+}
+
+.note-editor-container .form-control {
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  padding: 0.75rem 1rem;
+}
+
+.note-editor-container .form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+}
+
+.note-editor-container .btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.note-editor-container .btn-primary:hover {
+  background-color: #0056b3;
+  border-color: #0056b3;
+}
+
+.note-editor-container .btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.note-editor-container .btn-danger:hover {
+  background-color: #bd2130;
+  border-color: #bd2130;
+}
+
+/* Weekly Note Specific Styles */
+.weekly-note-section {
+  background-color: #f0f8ff; /* Light blue background */
+  border: 1px solid #b0e0e6; /* Light blue border */
+  border-radius: 0.25rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.weekly-note-section h5 {
+  color: var(--primary-color);
+  margin-bottom: 0.75rem;
+}
+
+.weekly-note-section ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.weekly-note-section li {
+  margin-bottom: 0.5rem;
+}
+
+.weekly-note-section .form-control {
+  background-color: white;
+}
