@@ -5,12 +5,6 @@ FROM node:18-alpine
 WORKDIR /app
 
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
-COPY package*.json ./
-
-# Install app dependencies
-RUN npm install
-
-# Bundle app source
 COPY . .
 
 # Creates a "dist" folder with the production build
@@ -18,4 +12,4 @@ COPY . .
 
 EXPOSE 3001
 
-CMD [ "npm", "start" ]
+# CMD [ "npm", "start" ]
