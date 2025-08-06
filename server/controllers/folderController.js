@@ -1,9 +1,16 @@
 const { pool } = require('../db');
 
-// Get all folders
+// Get all folders with their note counts
 const getAllFolders = async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM folders ORDER BY name');
+    const query = `
+      SELECT f.id, f.name, COUNT(n.id) as note_count
+      FROM folders f
+      LEFT JOIN notes n ON f.id = n.folder_id AND n.archived = FALSE
+      GROUP BY f.id
+      ORDER BY f.name;
+    `;
+    const [rows] = await pool.query(query);
     res.json(rows);
   } catch (error) {
     console.error('GET /api/folders Error:', error);

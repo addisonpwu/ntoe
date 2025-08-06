@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Spinner, Nav, Tab, Badge, Form, Dropdown } from 'react-bootstrap';
-import { FaTrash, FaPlus, FaArchive, FaInbox, FaTimes, FaArrowRight, FaFolderOpen } from 'react-icons/fa';
+import { FaTrash, FaPlus, FaArchive, FaInbox, FaTimes, FaArrowRight, FaFolderOpen, FaRegStickyNote } from 'react-icons/fa';
 import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import ReactMarkdown from 'react-markdown';
@@ -195,7 +195,13 @@ const NoteEditor = ({ activeNote, allTags, folders, onContentChange, onTitleChan
   }, [activeNote?.title, activeNote?.content, activeNote?.tags]);
 
   if (!activeNote) {
-    return <div className="text-center text-muted p-4">選擇一則筆記或建立新筆記。</div>;
+    return (
+      <div className="empty-state">
+        <div className="empty-state-icon"><FaRegStickyNote /></div>
+        <h5>選擇或建立一篇新筆記</h5>
+        <p>從左側選單中選擇一篇筆記，或點擊「新增筆記」按鈕開始。</p>
+      </div>
+    );
   }
 
   const renderEditor = () => {
@@ -240,7 +246,7 @@ const NoteEditor = ({ activeNote, allTags, folders, onContentChange, onTitleChan
   }
 
   return (
-    <div className="col-md-9 note-editor-container d-flex flex-column">
+    <div className="note-editor-container d-flex flex-column">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <input type="text" className="form-control form-control-lg me-2" value={activeNote.title} onChange={onTitleChange} />
         <div className="d-flex align-items-center">
@@ -250,7 +256,7 @@ const NoteEditor = ({ activeNote, allTags, folders, onContentChange, onTitleChan
               <FaFolderOpen className="me-1" /> 移動
             </Dropdown.Toggle>
             <Dropdown.Menu>
-              <Dropdown.Item onClick={() => onMoveNote(null)}>預設文件夾</Dropdown.Item>
+              <Dropdown.Item onClick={() => onMoveNote(null)}>收件匣</Dropdown.Item>
               {folders.map(folder => (
                 <Dropdown.Item key={folder.id} onClick={() => onMoveNote(folder.id)}>{folder.name}</Dropdown.Item>
               ))}
