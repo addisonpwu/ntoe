@@ -1,4 +1,5 @@
 const { pool } = require('../db');
+const bcrypt = require('bcryptjs');
 
 const getStats = async (req, res) => {
   try {
