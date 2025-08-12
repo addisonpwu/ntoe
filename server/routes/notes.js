@@ -1,19 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const noteController = require('../controllers/noteController');
-const tagController = require('../controllers/tagController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-// Note Routes
+// Protect all note routes
+router.use(authMiddleware);
+
+// Core Note Routes
 router.get('/', noteController.getAllNotes);
 router.post('/', noteController.createNote);
 router.put('/:id', noteController.updateNote);
-router.put('/:id/move', noteController.moveNote);
 router.delete('/:id', noteController.deleteNote);
+
+// Note Actions
 router.post('/:id/archive', noteController.archiveNote);
 router.post('/:id/unarchive', noteController.unarchiveNote);
+router.put('/:id/move', noteController.moveNote);
 
-// Tag routes nested under notes
-router.post('/:noteId/tags', tagController.addTagToNote);
-router.delete('/:noteId/tags/:tagId', tagController.removeTagFromNote);
+// Tag management for a specific note
+router.post('/:noteId/tags', noteController.addTagToNote);
+router.delete('/:noteId/tags/:tagId', noteController.removeTagFromNote);
 
 module.exports = router;

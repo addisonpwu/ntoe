@@ -1,64 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+
 import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
-import Header from './components/Header';
+import AppLayout from './components/AppLayout';
+import ProtectedRoute from './components/ProtectedRoute';
 import MainView from './components/MainView';
 import AdminDashboard from './components/AdminDashboard';
+import LoginPage from './pages/LoginPage';
 
 function App() {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
-
-  useEffect(() => {
-    document.body.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
-  };
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!isSidebarOpen);
-  };
-
   return (
     <BrowserRouter>
-      <div className="app-container">
-        <Header 
-          theme={theme} 
-          toggleTheme={toggleTheme} 
-          toggleSidebar={toggleSidebar} 
-        />
-        <div className="main-content">
-          <Routes>
+      <AuthProvider>
+        <Routes>
+          {/* Public route */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Protected routes */}
+          <Route 
+            path="/" 
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            {/* Nested routes will render inside AppLayout's <Outlet> */}
+            <Route index element={<MainView />} />
             <Route 
-              path="/"
-              element={<MainView isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />} 
+              path="admin" 
+              element={
+                <ProtectedRoute adminOnly={true}>
+                  <div className="admin-dashboard-container"><AdminDashboard /></div>
+                </ProtectedRoute>
+              }
             />
-            <Route 
-              path="/admin"
-              element={<div className="admin-dashboard-container"><AdminDashboard /></div>} 
-            />
-          </Routes>
-        </div>
-        <ToastContainer 
-          position="bottom-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme={theme}
-        />
-      </div>
+          </Route>
+
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

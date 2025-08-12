@@ -1,8 +1,14 @@
 import axios from 'axios';
 
+// The proxy in package.json handles directing this to the backend.
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: '/api',
 });
+
+export default apiClient;
+
+// Auth APIs
+export const login = (username, password) => apiClient.post('/auth/login', { username, password });
 
 // Note APIs
 export const fetchNotes = (status = 'current', search = '', tagId = null, folderId = 'inbox') => {
@@ -29,3 +35,10 @@ export const fetchFolders = () => apiClient.get('/folders');
 export const createFolder = (name) => apiClient.post('/folders', { name });
 export const renameFolder = (id, name) => apiClient.put(`/folders/${id}`, { name });
 export const deleteFolder = (id) => apiClient.delete(`/folders/${id}`);
+
+// Admin APIs
+export const fetchAdminStats = () => apiClient.get('/admin/stats');
+export const fetchAllNotes = () => apiClient.get('/admin/notes');
+export const fetchUsers = () => apiClient.get('/admin/users');
+export const createUser = (userData) => apiClient.post('/admin/users', userData);
+export const deleteUser = (userId) => apiClient.delete(`/admin/users/${userId}`);

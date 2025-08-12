@@ -1,22 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Card, Col, Row, Table, Badge } from 'react-bootstrap';
+import { Card, Col, Row, Table, Badge, Button, Form, Modal } from 'react-bootstrap';
+import * as api from '../api';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [notes, setNotes] = useState([]);
+  const [users, setUsers] = useState([]);
   const [error, setError] = useState('');
+
+  // State for the new user modal
+  const [showModal, setShowModal] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newRole, setNewRole] = useState('member');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const statsRes = await axios.get('/api/admin/stats');
+        const [statsRes, notesRes, usersRes] = await Promise.all([
+          api.fetchAdminStats(),
+          api.fetchAllNotes(),
+          api.fetchUsers()
+        ]);
         setStats(statsRes.data);
-
-        const notesRes = await axios.get('/api/admin/notes');
         setNotes(notesRes.data);
+        setUsers(usersRes.data);
       } catch (err) {
-        setError('Failed to fetch admin data. Is the server running?');
+        setError('Failed to fetch admin data. Are you logged in as an admin?');
         console.error(err);
       }
     };
@@ -24,16 +34,53 @@ const AdminDashboard = () => {
     fetchData();
   }, []);
 
+  const handleShowModal = () => setShowModal(true);
+  const handleCloseModal = () => {
+    setShowModal(false);
+    // Reset form fields on close
+    setNewUsername('');
+    setNewPassword('');
+    setNewRole('member');
+  }
+
+  const handleCreateUser = async () => {
+    if (!newUsername || !newPassword) {
+      alert('Username and password are required.');
+      return;
+    }
+    try {
+      await api.createUser({ username: newUsername, password: newPassword, role: newRole });
+      // Refetch users to show the new one
+      const usersRes = await api.fetchUsers();
+      setUsers(usersRes.data);
+      handleCloseModal();
+    } catch (err) {
+      alert('Failed to create user. The username might already be taken.');
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      try {
+        await api.deleteUser(userId);
+        // Refetch users to remove the deleted one
+        setUsers(users.filter(u => u.id !== userId));
+      } catch (err) {
+        alert('Failed to delete user.');
+      }
+    }
+  };
+
   if (error) {
     return <div className="alert alert-danger">{error}</div>;
   }
 
   if (!stats) {
-    return <div>Loading...</div>;
+    return <div>Loading Admin Dashboard...</div>;
   }
 
   return (
-    <div className="mt-4">
+    <div className="p-3">
       <h2>Admin Dashboard</h2>
       <Row className="mb-4">
         <Col>
@@ -101,6 +148,65 @@ const AdminDashboard = () => {
           ))}
         </tbody>
       </Table>
+
+      <div className="d-flex justify-content-between align-items-center mt-4">
+        <h4>User Management</h4>
+        <Button variant="primary" onClick={handleShowModal}>Create New User</Button>
+      </div>
+      <Table striped bordered hover responsive size="sm" className="mt-2">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Created At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map(user => (
+            <tr key={user.id}>
+              <td>{user.id}</td>
+              <td>{user.username}</td>
+              <td><Badge bg={user.role === 'admin' ? 'danger' : 'secondary'}>{user.role}</Badge></td>
+              <td>{new Date(user.created_at).toLocaleString()}</td>
+              <td>
+                <Button variant="outline-danger" size="sm" onClick={() => handleDeleteUser(user.id)}>Delete</Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+
+      {/* Create User Modal */}
+      <Modal show={showModal} onHide={handleCloseModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Create New User</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Username</Form.Label>
+              <Form.Control type="text" value={newUsername} onChange={e => setNewUsername(e.target.value)} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Password</Form.Label>
+              <Form.Control type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Role</Form.Label>
+              <Form.Select value={newRole} onChange={e => setNewRole(e.target.value)}>
+                <option value="member">Member</option>
+                <option value="admin">Admin</option>
+              </Form.Select>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseModal}>Close</Button>
+          <Button variant="primary" onClick={handleCreateUser}>Create User</Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

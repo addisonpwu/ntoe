@@ -5,6 +5,7 @@ const noteRoutes = require('./routes/notes');
 const tagRoutes = require('./routes/tags');
 const folderRoutes = require('./routes/folders');
 const adminRoutes = require('./routes/admin');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const port = 3001;
@@ -17,6 +18,7 @@ app.use('/api/notes', noteRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/folders', folderRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
 
 // API endpoint to check database connection
 app.get('/api/health', async (req, res) => {

@@ -82,7 +82,8 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
 
     setActiveNote({ ...note, content: contentToSet });
     if (window.innerWidth < 768) {
-      setSidebarOpen(false);
+      // This state is now local to MainView
+      // setSidebarOpen(false);
     }
   };
 
