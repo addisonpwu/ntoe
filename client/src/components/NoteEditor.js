@@ -217,30 +217,19 @@ const NoteEditor = ({ activeNote, allTags, folders, onContentChange, onTitleChan
       )
     } else {
       return (
-        <Tab.Container defaultActiveKey="edit">
-          <Nav variant="tabs" className="mb-2">
-            <Nav.Item>
-              <Nav.Link eventKey="edit">編輯</Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link eventKey="preview">預覽</Nav.Link>
-            </Nav.Item>
-          </Nav>
-          <Tab.Content className="flex-grow-1 d-flex flex-column">
-            <Tab.Pane eventKey="edit" className="flex-grow-1 d-flex flex-column">
-              <textarea 
-                className="form-control flex-grow-1 markdown-editor"
-                value={activeNote.content}
-                onChange={(e) => onContentChange(e.target.value)}
-              />
-            </Tab.Pane>
-            <Tab.Pane eventKey="preview" className="markdown-preview p-3 border rounded flex-grow-1">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {activeNote.content}
-              </ReactMarkdown>
-            </Tab.Pane>
-          </Tab.Content>
-        </Tab.Container>
+        <div className="side-by-side-editor">
+          <textarea 
+            className="editor-pane"
+            value={activeNote.content}
+            onChange={(e) => onContentChange(e.target.value)}
+            placeholder="# Your markdown here..."
+          />
+          <div className="preview-pane markdown-preview">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {activeNote.content}
+            </ReactMarkdown>
+          </div>
+        </div>
       )
     }
   }
