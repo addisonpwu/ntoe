@@ -143,3 +143,13 @@
     padding: 1.5rem;
   }
 }
+
+.admin-link {
+  color: var(--text-secondary) !important;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.admin-link:hover {
+  color: var(--text-primary) !important;
+}

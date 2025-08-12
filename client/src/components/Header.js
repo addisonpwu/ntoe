@@ -13,7 +13,6 @@ const Header = ({ theme, toggleTheme, toggleSidebar }) => {
         <i className="bi bi-journal-text me-2"></i> 我的筆記
       </Navbar.Brand>
       <Nav className="me-auto">
-        <Nav.Link as={Link} to="/admin">Admin</Nav.Link>
       </Nav>
       <Button variant="outline-secondary" onClick={toggleTheme} className="ms-auto">
         {theme === 'light' ? <FaMoon /> : <FaSun />}
