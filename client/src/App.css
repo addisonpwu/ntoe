@@ -80,10 +80,18 @@
 }
 
 /* Note Editor */
-.note-editor-container {
+.note-editor {
   flex-grow: 1;
-  padding: 2rem;
+  padding: 1rem;
+  background-color: var(--background-secondary);
   overflow-y: auto;
+}
+
+.admin-dashboard-container {
+  padding: 1rem;
+  grid-column: 1 / -1; /* Span across all columns in the grid */
+  background-color: var(--background-primary);
+  border-top: 1px solid var(--border-color);
 }
 
 .note-editor-container .form-control-lg {
