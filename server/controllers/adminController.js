@@ -20,7 +20,8 @@ const getStats = async (req, res) => {
 
 const getAllNotes = async (req, res) => {
   try {
-    const [notes] = await pool.query('SELECT id, title, type, archived, created_at FROM notes ORDER BY created_at DESC');
+    // Select all fields to ensure frontend has access to status, user_id, etc.
+    const [notes] = await pool.query('SELECT * FROM notes ORDER BY updated_at DESC');
     res.json(notes);
   } catch (error) {
     console.error('Error fetching all notes:', error);
@@ -91,4 +92,61 @@ module.exports = {
   listUsers,
   createUser,
   deleteUser,
+};
+
+const aggregateWeeklyNotes = async (req, res) => {
+  const { noteIds } = req.body;
+
+  if (!noteIds || !Array.isArray(noteIds) || noteIds.length === 0) {
+    return res.status(400).json({ message: 'An array of noteIds is required.' });
+  }
+
+  try {
+    const query = `
+      SELECT n.content, u.username 
+      FROM notes n 
+      JOIN users u ON n.user_id = u.id 
+      WHERE n.id IN (?) AND n.type = 'weekly' AND n.status = 'submitted'
+    `;
+
+    const [notes] = await pool.query(query, [noteIds]);
+
+    if (notes.length === 0) {
+      return res.status(404).json({ message: 'No valid, submitted weekly notes found for the given IDs.' });
+    }
+
+    const aggregated = {
+      keyFocus: [],
+      regularWork: [],
+    };
+
+    for (const note of notes) {
+      const content = note.content;
+      if (content.keyFocus && Array.isArray(content.keyFocus)) {
+        content.keyFocus.forEach(item => {
+          aggregated.keyFocus.push(`[${note.username}] ${item.text}`);
+        });
+      }
+      if (content.regularWork && Array.isArray(content.regularWork)) {
+        content.regularWork.forEach(item => {
+          aggregated.regularWork.push(`[${note.username}] ${item.text}`);
+        });
+      }
+    }
+
+    res.json(aggregated);
+
+  } catch (error) {
+    console.error('Error aggregating weekly notes:', error);
+    res.status(500).json({ message: 'Failed to aggregate weekly notes' });
+  }
+};
+
+module.exports = {
+  getStats,
+  getAllNotes,
+  listUsers,
+  createUser,
+  deleteUser,
+  aggregateWeeklyNotes,
 };

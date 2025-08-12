@@ -21,4 +21,7 @@ router.put('/:id/move', noteController.moveNote);
 router.post('/:noteId/tags', noteController.addTagToNote);
 router.delete('/:noteId/tags/:tagId', noteController.removeTagFromNote);
 
+// Submit a weekly note
+router.post('/:id/submit', noteController.submitNote);
+
 module.exports = router;

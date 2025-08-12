@@ -304,6 +304,7 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
       />
       <NoteEditor 
         activeNote={activeNote}
+        setActiveNote={setActiveNote} // Pass setter function
         allTags={tags}
         folders={folders}
         onContentChange={handleContentChange}

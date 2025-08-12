@@ -72,6 +72,12 @@ const setupDatabase = async () => {
       await connection.query('ALTER TABLE notes ADD COLUMN folder_id INT NULL AFTER user_id');
       await connection.query('ALTER TABLE notes ADD CONSTRAINT fk_folder_id FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE SET NULL');
     }
+    // Add status to notes
+    const [statusColumns] = await connection.query("SHOW COLUMNS FROM notes LIKE 'status'");
+    if (statusColumns.length === 0) {
+      console.log("Adding 'status' to 'notes' table...");
+      await connection.query("ALTER TABLE notes ADD COLUMN status ENUM('draft', 'submitted') NOT NULL DEFAULT 'draft' AFTER archived");
+    }
     console.log("Table 'notes' is ready.");
 
     // Tags table

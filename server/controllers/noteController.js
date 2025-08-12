@@ -199,6 +199,28 @@ const removeTagFromNote = async (req, res) => {
   }
 };
 
+// Submit a weekly note
+const submitNote = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const { id } = req.params;
+    // Make sure user can only submit their own weekly notes that are currently drafts.
+    const [result] = await pool.query(
+      "UPDATE notes SET status = 'submitted' WHERE id = ? AND user_id = ? AND type = 'weekly' AND status = 'draft'", 
+      [id, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Weekly note not found, not a draft, or permission denied.' });
+    }
+
+    res.json({ message: 'Weekly note submitted successfully' });
+  } catch (error) {
+    console.error(`POST /api/notes/${id}/submit Error:`, error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAllNotes,
   createNote,
@@ -208,5 +230,6 @@ module.exports = {
   archiveNote,
   unarchiveNote,
   addTagToNote,
-  removeTagFromNote
+  removeTagFromNote,
+  submitNote
 };
