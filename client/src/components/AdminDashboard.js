@@ -1,73 +1,140 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Col, Row, Table, Badge, Button, Form, Modal } from 'react-bootstrap';
+import { Card, Col, Row, Table, Badge, Button, Form, Modal, Nav } from 'react-bootstrap';
+import { FaTachometerAlt, FaFileAlt, FaUsers } from 'react-icons/fa';
 import * as api from '../api';
+
+const StatsCards = ({ stats }) => (
+  <>
+    <h2 className="mb-4">儀表盤</h2>
+    <Row>
+      <Col md={6} xl={3} className="mb-4">
+        <Card bg="primary" text="white"><Card.Body><Card.Title className="fs-2">{stats.totalNotes}</Card.Title><Card.Text>總筆記數</Card.Text></Card.Body></Card>
+      </Col>
+      <Col md={6} xl={3} className="mb-4">
+        <Card bg="success" text="white"><Card.Body><Card.Title className="fs-2">{stats.normalNotes}</Card.Title><Card.Text>普通筆記</Card.Text></Card.Body></Card>
+      </Col>
+      <Col md={6} xl={3} className="mb-4">
+        <Card bg="info" text="white"><Card.Body><Card.Title className="fs-2">{stats.weeklyNotes}</Card.Title><Card.Text>周報數量</Card.Text></Card.Body></Card>
+      </Col>
+      <Col md={6} xl={3} className="mb-4">
+        <Card bg="secondary" text="white"><Card.Body><Card.Title className="fs-2">{stats.archivedNotes}</Card.Title><Card.Text>已封存</Card.Text></Card.Body></Card>
+      </Col>
+    </Row>
+  </>
+);
+
+const SubmittedNotesView = ({ notes, users, onSelectionChange, selectedIds, onAggregate, isAggregating }) => (
+  <>
+    <div className="d-flex justify-content-between align-items-center mb-4">
+      <h2>周報審批</h2>
+      <Button variant="success" onClick={onAggregate} disabled={selectedIds.size === 0 || isAggregating}>
+        {isAggregating ? '正在匯總...' : `匯總選中 (${selectedIds.size})`}
+      </Button>
+    </div>
+    <Table striped bordered hover responsive size="sm">
+      <thead>
+        <tr>
+          <th style={{ width: '50px' }} className="text-center"><Form.Check type="checkbox" disabled /></th>
+          <th>標題</th>
+          <th>提交人</th>
+          <th>提交時間</th>
+        </tr>
+      </thead>
+      <tbody>
+        {notes.map(note => (
+          <tr key={note.id}>
+            <td className="text-center"><Form.Check type="checkbox" onChange={() => onSelectionChange(note.id)} checked={selectedIds.has(note.id)} /></td>
+            <td>{note.title}</td>
+            <td>{users.find(u => u.id === note.user_id)?.username || 'N/A'}</td>
+            <td>{new Date(note.updated_at).toLocaleString()}</td>
+          </tr>
+        ))}
+      </tbody>
+    </Table>
+  </>
+);
+
+const UserManagementView = ({ users, onShowModal, onDeleteUser }) => (
+  <>
+    <div className="d-flex justify-content-between align-items-center mb-4">
+      <h2>用戶管理</h2>
+      <Button variant="primary" onClick={onShowModal}>創建新用戶</Button>
+    </div>
+    <Table striped bordered hover responsive size="sm">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>用戶名</th>
+          <th>角色</th>
+          <th>創建時間</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {users.map(user => (
+          <tr key={user.id}>
+            <td>{user.id}</td>
+            <td>{user.username}</td>
+            <td><Badge bg={user.role === 'admin' ? 'danger' : 'secondary'}>{user.role}</Badge></td>
+            <td>{new Date(user.created_at).toLocaleString()}</td>
+            <td><Button variant="outline-danger" size="sm" onClick={() => onDeleteUser(user.id)}>刪除</Button></td>
+          </tr>
+        ))}
+      </tbody>
+    </Table>
+  </>
+);
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [notes, setNotes] = useState([]);
   const [users, setUsers] = useState([]);
   const [error, setError] = useState('');
+  const [activeView, setActiveView] = useState('dashboard');
 
-  // State for user management modal
   const [showUserModal, setShowUserModal] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState('member');
 
-  // State for aggregation
   const [selectedNoteIds, setSelectedNoteIds] = useState(new Set());
   const [showAggregationModal, setShowAggregationModal] = useState(false);
   const [aggregatedResult, setAggregatedResult] = useState(null);
   const [isAggregating, setIsAggregating] = useState(false);
 
-  const submittedWeeklyNotes = useMemo(() => {
-    return notes.filter(n => n.type === 'weekly' && n.status === 'submitted');
-  }, [notes]);
+  const submittedWeeklyNotes = useMemo(() => notes.filter(n => n.type === 'weekly' && n.status === 'submitted'), [notes]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsRes, notesRes, usersRes] = await Promise.all([
-          api.fetchAdminStats(),
-          api.fetchAllNotes(), // This fetches all notes, we filter it below
-          api.fetchUsers()
-        ]);
+        const [statsRes, notesRes, usersRes] = await Promise.all([api.fetchAdminStats(), api.fetchAllNotes(), api.fetchUsers()]);
         setStats(statsRes.data);
         setNotes(notesRes.data);
         setUsers(usersRes.data);
       } catch (err) {
-        setError('Failed to fetch admin data. Are you logged in as an admin?');
-        console.error(err);
+        setError('Failed to fetch admin data.');
       }
     };
-
     fetchData();
   }, []);
 
   const handleShowUserModal = () => setShowUserModal(true);
-  const handleCloseUserModal = () => {
-    setShowUserModal(false);
-    setNewUsername('');
-    setNewPassword('');
-    setNewRole('member');
-  }
+  const handleCloseUserModal = () => { setShowUserModal(false); setNewUsername(''); setNewPassword(''); setNewRole('member'); };
 
   const handleCreateUser = async () => {
-    if (!newUsername || !newPassword) {
-      return alert('Username and password are required.');
-    }
+    if (!newUsername || !newPassword) return alert('Username and password are required.');
     try {
       await api.createUser({ username: newUsername, password: newPassword, role: newRole });
       const usersRes = await api.fetchUsers();
       setUsers(usersRes.data);
       handleCloseUserModal();
     } catch (err) {
-      alert('Failed to create user. The username might already be taken.');
+      alert('Failed to create user.');
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    if (window.confirm('Are you sure?')) {
       try {
         await api.deleteUser(userId);
         setUsers(users.filter(u => u.id !== userId));
@@ -80,137 +147,80 @@ const AdminDashboard = () => {
   const handleNoteSelectionChange = (noteId) => {
     setSelectedNoteIds(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(noteId)) {
-        newSet.delete(noteId);
-      } else {
-        newSet.add(noteId);
-      }
+      newSet.has(noteId) ? newSet.delete(noteId) : newSet.add(noteId);
       return newSet;
     });
   };
 
   const handleAggregate = async () => {
-    if (selectedNoteIds.size === 0) {
-      return alert('Please select at least one weekly note to aggregate.');
-    }
+    if (selectedNoteIds.size === 0) return alert('Please select notes.');
     setIsAggregating(true);
     try {
       const result = await api.aggregateWeeklyNotes(Array.from(selectedNoteIds));
       setAggregatedResult(result.data);
       setShowAggregationModal(true);
     } catch (error) {
-      alert('Failed to aggregate notes.');
+      alert('Failed to aggregate.');
     } finally {
       setIsAggregating(false);
     }
   };
 
-  if (error) {
-    return <div className="alert alert-danger">{error}</div>;
-  }
+  const renderActiveView = () => {
+    switch (activeView) {
+      case 'dashboard': return <StatsCards stats={stats} />;
+      case 'notes': return <SubmittedNotesView notes={submittedWeeklyNotes} users={users} onSelectionChange={handleNoteSelectionChange} selectedIds={selectedNoteIds} onAggregate={handleAggregate} isAggregating={isAggregating} />;
+      case 'users': return <UserManagementView users={users} onShowModal={handleShowUserModal} onDeleteUser={handleDeleteUser} />;
+      default: return <StatsCards stats={stats} />;
+    }
+  };
 
-  if (!stats) {
-    return <div>Loading Admin Dashboard...</div>;
-  }
+  if (error) return <div className="p-4 alert alert-danger">{error}</div>;
+  if (!stats) return <div className="p-4">Loading...</div>;
 
   return (
-    <div className="p-3">
-      <h2>Admin Dashboard</h2>
-      {/* Stats Cards... */}
+    <div className="admin-layout">
+      <nav className="admin-sidebar">
+        <h4 className="mb-4">管理後台</h4>
+        <Nav variant="pills" activeKey={activeView} onSelect={setActiveView} className="flex-column">
+          <Nav.Item><Nav.Link eventKey="dashboard"><FaTachometerAlt className="me-2" /> 儀表盤</Nav.Link></Nav.Item>
+          <Nav.Item><Nav.Link eventKey="notes"><FaFileAlt className="me-2" /> 周報審批</Nav.Link></Nav.Item>
+          <Nav.Item><Nav.Link eventKey="users"><FaUsers className="me-2" /> 用戶管理</Nav.Link></Nav.Item>
+        </Nav>
+      </nav>
+      <main className="admin-content">
+        {renderActiveView()}
+      </main>
 
-      <div className="d-flex justify-content-between align-items-center mt-4">
-        <h4>Submitted Weekly Notes</h4>
-        <Button 
-          variant="success" 
-          onClick={handleAggregate}
-          disabled={selectedNoteIds.size === 0 || isAggregating}
-        >
-          {isAggregating ? 'Aggregating...' : `Aggregate Selected (${selectedNoteIds.size})`}
-        </Button>
-      </div>
-      <Table striped bordered hover responsive size="sm" className="mt-2">
-        <thead>
-          <tr>
-            <th><Form.Check type="checkbox" disabled /></th>
-            <th>Title</th>
-            <th>Author</th>
-            <th>Submitted At</th>
-          </tr>
-        </thead>
-        <tbody>
-          {submittedWeeklyNotes.map(note => (
-            <tr key={note.id}>
-              <td><Form.Check type="checkbox" onChange={() => handleNoteSelectionChange(note.id)} checked={selectedNoteIds.has(note.id)} /></td>
-              <td>{note.title}</td>
-              <td>{users.find(u => u.id === note.user_id)?.username || 'Unknown'}</td>
-              <td>{new Date(note.updated_at).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-
-      <div className="d-flex justify-content-between align-items-center mt-4">
-        <h4>User Management</h4>
-        <Button variant="primary" onClick={handleShowUserModal}>Create New User</Button>
-      </div>
-      <Table striped bordered hover responsive size="sm" className="mt-2">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Role</th>
-            <th>Created At</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map(user => (
-            <tr key={user.id}>
-              <td>{user.id}</td>
-              <td>{user.username}</td>
-              <td><Badge bg={user.role === 'admin' ? 'danger' : 'secondary'}>{user.role}</Badge></td>
-              <td>{new Date(user.created_at).toLocaleString()}</td>
-              <td>
-                <Button variant="outline-danger" size="sm" onClick={() => handleDeleteUser(user.id)}>Delete</Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-
-      {/* Create User Modal */}
       <Modal show={showUserModal} onHide={handleCloseUserModal}>
-        <Modal.Header closeButton><Modal.Title>Create New User</Modal.Title></Modal.Header>
+        <Modal.Header closeButton><Modal.Title>創建新用戶</Modal.Title></Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group className="mb-3"><Form.Label>Username</Form.Label><Form.Control type="text" value={newUsername} onChange={e => setNewUsername(e.target.value)} /></Form.Group>
-            <Form.Group className="mb-3"><Form.Label>Password</Form.Label><Form.Control type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} /></Form.Group>
-            <Form.Group className="mb-3"><Form.Label>Role</Form.Label><Form.Select value={newRole} onChange={e => setNewRole(e.target.value)}><option value="member">Member</option><option value="admin">Admin</option></Form.Select></Form.Group>
+            <Form.Group className="mb-3"><Form.Label>用戶名</Form.Label><Form.Control type="text" value={newUsername} onChange={e => setNewUsername(e.target.value)} /></Form.Group>
+            <Form.Group className="mb-3"><Form.Label>密碼</Form.Label><Form.Control type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} /></Form.Group>
+            <Form.Group className="mb-3"><Form.Label>角色</Form.Label><Form.Select value={newRole} onChange={e => setNewRole(e.target.value)}><option value="member">Member</option><option value="admin">Admin</option></Form.Select></Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseUserModal}>Close</Button>
-          <Button variant="primary" onClick={handleCreateUser}>Create User</Button>
+          <Button variant="secondary" onClick={handleCloseUserModal}>關閉</Button>
+          <Button variant="primary" onClick={handleCreateUser}>創建</Button>
         </Modal.Footer>
       </Modal>
 
-      {/* Aggregation Result Modal */}
       <Modal show={showAggregationModal} onHide={() => setShowAggregationModal(false)} size="lg">
-        <Modal.Header closeButton><Modal.Title>Aggregated Weekly Notes</Modal.Title></Modal.Header>
+        <Modal.Header closeButton><Modal.Title>周報匯總結果</Modal.Title></Modal.Header>
         <Modal.Body>
           {aggregatedResult && (
             <>
-              <h5>Key Focus</h5>
-              <ul>{aggregatedResult.keyFocus.map((item, i) => <li key={`kf-${i}`}>{item}</li>)}</ul>
+              <h5>重點工作</h5>
+              <pre className="aggregation-box">{aggregatedResult.keyFocus.join('\n')}</pre>
               <hr />
-              <h5>Regular Work</h5>
-              <ul>{aggregatedResult.regularWork.map((item, i) => <li key={`rw-${i}`}>{item}</li>)}</ul>
+              <h5>常規工作</h5>
+              <pre className="aggregation-box">{aggregatedResult.regularWork.join('\n')}</pre>
             </>
           )}
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAggregationModal(false)}>Close</Button>
-        </Modal.Footer>
+        <Modal.Footer><Button variant="secondary" onClick={() => setShowAggregationModal(false)}>關閉</Button></Modal.Footer>
       </Modal>
     </div>
   );
