@@ -27,6 +27,9 @@ export const moveNote = (id, folderId) => apiClient.put(`/notes/${id}/move`, { f
 
 // Tag APIs
 export const fetchTags = () => apiClient.get('/tags');
+export const createTag = (name) => apiClient.post('/tags', { name });
+export const updateTag = (id, name) => apiClient.put(`/tags/${id}`, { name });
+export const deleteTag = (id) => apiClient.delete(`/tags/${id}`);
 export const addTagToNote = (noteId, tagName) => apiClient.post(`/notes/${noteId}/tags`, { tagName });
 export const removeTagFromNote = (noteId, tagId) => apiClient.delete(`/notes/${noteId}/tags/${tagId}`);
 

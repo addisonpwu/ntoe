@@ -104,27 +104,7 @@ const NoteList = ({
                 )}
               </Accordion.Body>
             </Accordion.Item>
-            <Accordion.Item eventKey="tags">
-              <Accordion.Header>標籤</Accordion.Header>
-              <Accordion.Body className="tag-cloud p-2">
-                {tags.map(tag => (
-                  <Badge 
-                    key={tag.id} 
-                    pill 
-                    bg={selectedTag?.id === tag.id ? 'primary' : 'secondary'}
-                    className="me-1 mb-1 tag-badge"
-                    onClick={() => setSelectedTag(tag)}
-                  >
-                    <FaTag className="me-1" /> {tag.name}
-                  </Badge>
-                ))}
-                {selectedTag && (
-                  <Button variant="link" size="sm" className="p-0 mt-1" onClick={() => setSelectedTag(null)}>
-                    <FaTimes /> 清除篩選
-                  </Button>
-                )}
-              </Accordion.Body>
-            </Accordion.Item>
+            
           </Accordion>
         </div>
 
@@ -150,11 +130,7 @@ const NoteList = ({
                   onClick={() => onNoteSelect(note)}
                 >
                   <div className="note-title">{note.title}</div>
-                  <div className="note-tags">
-                    {note.tags && note.tags.map(tag => (
-                      <Badge key={tag.id} pill bg="info" className="me-1">{tag.name}</Badge>
-                    ))}
-                  </div>
+                  
                 </ListGroup.Item>
               ))}
             </ListGroup>

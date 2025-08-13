@@ -78,12 +78,32 @@ const createNote = async (req, res) => {
 // Update a note for the current user
 const updateNote = async (req, res) => {
   const userId = req.user.id;
+  const { id } = req.params;
+  const { title, content } = req.body;
+  const contentJSON = JSON.stringify(content);
+
   try {
-    const { id } = req.params;
-    const { title, content } = req.body;
-    const contentJSON = JSON.stringify(content);
-    await pool.query('UPDATE notes SET title = ?, content = ? WHERE id = ? AND user_id = ?', [title, contentJSON, id, userId]);
-    res.json({ message: 'Note updated successfully' });
+    // First, get the current state of the note
+    const [[note]] = await pool.query('SELECT type, status FROM notes WHERE id = ? AND user_id = ?', [id, userId]);
+
+    if (!note) {
+      return res.status(404).json({ message: 'Note not found or permission denied.' });
+    }
+
+    // If a submitted weekly note is updated, revert its status to draft
+    if (note.type === 'weekly' && note.status === 'submitted') {
+      await pool.query(
+        'UPDATE notes SET title = ?, content = ?, status = \'draft\' WHERE id = ? AND user_id = ?',
+        [title, contentJSON, id, userId]
+      );
+      res.json({ message: 'Weekly note updated and status reverted to draft.', status: 'draft' });
+    } else {
+      await pool.query(
+        'UPDATE notes SET title = ?, content = ? WHERE id = ? AND user_id = ?',
+        [title, contentJSON, id, userId]
+      );
+      res.json({ message: 'Note updated successfully' });
+    }
   } catch (error) {
     console.error(`PUT /api/notes/${id} Error:`, error);
     res.status(500).json({ error: error.message });

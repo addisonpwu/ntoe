@@ -20,18 +20,12 @@ const getStats = async (req, res) => {
 
 const getAllNotes = async (req, res) => {
   try {
-    // Select all fields to ensure frontend has access to status, user_id, etc.
     const [notes] = await pool.query('SELECT * FROM notes ORDER BY updated_at DESC');
     res.json(notes);
   } catch (error) {
     console.error('Error fetching all notes:', error);
     res.status(500).json({ message: 'Failed to fetch all notes' });
   }
-};
-
-module.exports = {
-  getStats,
-  getAllNotes,
 };
 
 const listUsers = async (req, res) => {
@@ -52,7 +46,6 @@ const createUser = async (req, res) => {
   }
 
   try {
-    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -74,7 +67,6 @@ const createUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   const { id } = req.params;
   try {
-    // Prevent admin from deleting themselves
     if (parseInt(id, 10) === req.user.id) {
       return res.status(400).json({ message: 'Admin cannot delete themselves.' });
     }
@@ -84,14 +76,6 @@ const deleteUser = async (req, res) => {
     console.error('Error deleting user:', error);
     res.status(500).json({ message: 'Failed to delete user' });
   }
-};
-
-module.exports = {
-  getStats,
-  getAllNotes,
-  listUsers,
-  createUser,
-  deleteUser,
 };
 
 const aggregateWeeklyNotes = async (req, res) => {
@@ -115,24 +99,37 @@ const aggregateWeeklyNotes = async (req, res) => {
       return res.status(404).json({ message: 'No valid, submitted weekly notes found for the given IDs.' });
     }
 
-    const aggregated = {
-      keyFocus: [],
-      regularWork: [],
+    const keyFocusMap = new Map();
+    const regularWorkMap = new Map();
+
+    const processItem = (map, item, username) => {
+      const tags = (item.tags || []).map(t => t.name).sort();
+      const key = item.text + JSON.stringify(tags);
+
+      if (!map.has(key)) {
+        map.set(key, {
+          text: item.text,
+          tags: tags,
+          submitters: new Set(),
+        });
+      }
+      map.get(key).submitters.add(username);
     };
 
     for (const note of notes) {
       const content = note.content;
       if (content.keyFocus && Array.isArray(content.keyFocus)) {
-        content.keyFocus.forEach(item => {
-          aggregated.keyFocus.push(`[${note.username}] ${item.text}`);
-        });
+        content.keyFocus.forEach(item => processItem(keyFocusMap, item, note.username));
       }
       if (content.regularWork && Array.isArray(content.regularWork)) {
-        content.regularWork.forEach(item => {
-          aggregated.regularWork.push(`[${note.username}] ${item.text}`);
-        });
+        content.regularWork.forEach(item => processItem(regularWorkMap, item, note.username));
       }
     }
+
+    const aggregated = {
+      keyFocus: Array.from(keyFocusMap.values()).map(item => ({ ...item, submitters: Array.from(item.submitters) })),
+      regularWork: Array.from(regularWorkMap.values()).map(item => ({ ...item, submitters: Array.from(item.submitters) })),
+    };
 
     res.json(aggregated);
 

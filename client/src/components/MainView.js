@@ -88,11 +88,22 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
   };
 
   const handleContentChange = (content) => {
-    setActiveNote({ ...activeNote, content });
+    const newState = { ...activeNote, content };
+    if (activeNote.type === 'weekly' && activeNote.status === 'submitted') {
+      newState.status = 'draft';
+      toast.info('周報已變更，請記得重新提交。', { toastId: 'note-changed' });
+    }
+    setActiveNote(newState);
   };
 
   const handleTitleChange = (e) => {
-    setActiveNote({ ...activeNote, title: e.target.value });
+    const newTitle = e.target.value;
+    const newState = { ...activeNote, title: newTitle };
+    if (activeNote.type === 'weekly' && activeNote.status === 'submitted') {
+      newState.status = 'draft';
+      toast.info('周報已變更，請記得重新提交。', { toastId: 'note-changed' });
+    }
+    setActiveNote(newState);
   };
 
   const handleSave = () => {
@@ -104,7 +115,11 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
     };
 
     return api.updateNote(activeNote.id, noteToSave)
-      .then(() => {
+      .then((response) => {
+        if (response.data.status) {
+          setActiveNote(prev => ({ ...prev, status: response.data.status }));
+          toast.info('周報已更新，請記得重新提交。');
+        }
         loadNotes();
       })
       .catch(() => {
@@ -224,25 +239,7 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
       .catch(() => toast.error('還原筆記失敗。'));
   };
 
-  const handleAddTag = (tagName) => {
-    if (!activeNote) return;
-    api.addTagToNote(activeNote.id, tagName)
-      .then(response => {
-        const newTag = response.data.tag;
-        setActiveNote(prev => ({ ...prev, tags: [...prev.tags, newTag] }));
-        loadTags();
-      })
-      .catch(() => toast.error('新增標籤失敗。'));
-  };
-
-  const handleRemoveTag = (tagId) => {
-    if (!activeNote) return;
-    api.removeTagFromNote(activeNote.id, tagId)
-      .then(() => {
-        setActiveNote(prev => ({ ...prev, tags: prev.tags.filter(t => t.id !== tagId) }));
-      })
-      .catch(() => toast.error('移除標籤失敗。'));
-  };
+  
 
   const handleCarryOver = () => {
     if (!activeNote || activeNote.type !== 'weekly') return;
@@ -313,8 +310,7 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
         onDelete={handleDeleteRequest}
         onArchive={handleArchive}
         onUnarchive={handleUnarchive}
-        onAddTag={handleAddTag}
-        onRemoveTag={handleRemoveTag}
+        
         onCarryOver={handleCarryOver}
         onMoveNote={handleMoveNote}
       />

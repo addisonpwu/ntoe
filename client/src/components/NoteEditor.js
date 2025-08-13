@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Spinner, Badge, Dropdown } from 'react-bootstrap';
-import { FaTrash, FaPlus, FaArchive, FaInbox, FaTimes, FaArrowRight, FaFolderOpen, FaRegStickyNote, FaPaperPlane } from 'react-icons/fa';
+import { Button, Spinner, Dropdown, Badge } from 'react-bootstrap';
+import { FaTrash, FaPlus, FaArchive, FaInbox, FaTimes, FaArrowRight, FaFolderOpen, FaRegStickyNote, FaPaperPlane, FaTags } from 'react-icons/fa';
 import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import ReactMarkdown from 'react-markdown';
@@ -8,64 +8,19 @@ import remarkGfm from 'remark-gfm';
 import * as api from '../api';
 import { toast } from 'react-toastify';
 
-const TagManager = ({ noteTags, allTags, onAddTag, onRemoveTag, isReadOnly }) => {
-  const [selected, setSelected] = useState([]);
-
-  const handleAdd = (selectedItems) => {
-    if (isReadOnly || selectedItems.length === 0) return;
-    const newTag = selectedItems[0];
-
-    if (typeof newTag === 'string') {
-      onAddTag(newTag);
-    } 
-    else if (newTag.name) {
-      if (!(noteTags || []).some(t => t.id === newTag.id)) {
-        onAddTag(newTag.name);
-      }
-    }
-    setSelected([]);
-  };
-
-  return (
-    <div className="tag-manager mt-2 mb-3 p-2 border rounded">
-      <div className="d-flex flex-wrap align-items-center mb-2">
-        {(noteTags || []).map(tag => (
-          <Badge key={tag.id} pill bg="primary" className="me-2 mb-2 d-flex align-items-center tag-item">
-            {tag.name}
-            {!isReadOnly && (
-              <Button variant="link" size="sm" className="p-0 ms-1 text-white" onClick={() => onRemoveTag(tag.id)}>
-                <FaTimes />
-              </Button>
-            )}
-          </Badge>
-        ))}
-      </div>
-      <Typeahead
-        id="tag-typeahead"
-        allowNew
-        labelKey="name"
-        options={allTags}
-        placeholder={isReadOnly ? 'Tags' : '新增或搜尋標籤...'}
-        selected={selected}
-        onChange={handleAdd}
-        size="sm"
-        disabled={isReadOnly}
-      />
-    </div>
-  );
-};
-
-const WeeklyWorkList = ({ title, items, setItems, isReadOnly }) => {
+const WeeklyWorkList = ({ title, items, setItems, isReadOnly, allTags }) => {
   const [newItemText, setNewItemText] = useState('');
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingField, setEditingField] = useState(null);
   const [editText, setEditText] = useState('');
+  const [tagEditingIndex, setTagEditingIndex] = useState(null);
 
   const handleAddItem = () => {
     if (isReadOnly || newItemText.trim() === '') return;
-    const updatedItems = [...(items || []), { text: newItemText.trim(), completed: false, notes: '' }];
-    setItems(updatedItems);
+    const newItems = [...(items || []), { text: newItemText.trim(), completed: false, notes: '', tags: [] }];
+    setItems(newItems);
     setNewItemText('');
+    setTagEditingIndex(newItems.length - 1); // Auto-open tag editor for the new item
   };
 
   const handleRemoveItem = (index) => {
@@ -87,6 +42,7 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly }) => {
     setEditingIndex(index);
     setEditingField(field);
     setEditText(initialValue);
+    setTagEditingIndex(null);
   };
 
   const handleEditChange = (e) => {
@@ -95,7 +51,6 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly }) => {
 
   const handleEditSave = () => {
     if (editingIndex === null) return;
-
     const updatedItems = (items || []).map((item, i) => {
       if (i === editingIndex) {
         return { ...item, [editingField]: editText };
@@ -106,6 +61,20 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly }) => {
     setEditingIndex(null);
     setEditingField(null);
     setEditText('');
+  };
+
+  const handleItemTagChange = (itemIndex, newTags) => {
+    if (isReadOnly) return;
+    const updatedItems = items.map((item, i) =>
+      i === itemIndex ? { ...item, tags: newTags.map(t => (typeof t === 'string' ? { name: t } : t)) } : item
+    );
+    setItems(updatedItems);
+  };
+
+  const handleTagEditStart = (index) => {
+    if (isReadOnly) return;
+    setTagEditingIndex(index);
+    setEditingIndex(null);
   };
 
   const handleKeyDown = (e) => {
@@ -120,7 +89,8 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly }) => {
       <ul className="list-group mb-2">
         {(items || []).map((item, index) => (
           <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
-            <div className="d-flex align-items-center flex-grow-1">
+            {/* Left side: checkbox and text */}
+            <div className="d-flex align-items-center flex-grow-1 me-3">
               <input 
                 type="checkbox" 
                 className="form-check-input me-2"
@@ -131,7 +101,7 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly }) => {
               {editingIndex === index && editingField === 'text' ? (
                 <input
                   type="text"
-                  className="form-control form-control-sm me-2"
+                  className="form-control form-control-sm"
                   value={editText}
                   onChange={handleEditChange}
                   onBlur={handleEditSave}
@@ -147,6 +117,8 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly }) => {
                 </span>
               )}
             </div>
+
+            {/* Right side: notes, tags, and delete button */}
             <div className="d-flex align-items-center">
               {editingIndex === index && editingField === 'notes' ? (
                 <input
@@ -162,11 +134,54 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly }) => {
               ) : (
                 <small 
                   className="text-muted me-2"
-                  onClick={() => handleEditStart(index, 'notes', item.notes)}
+                  onClick={() => handleEditStart(index, 'notes', item.notes || '')}
                 >
                   {item.notes || '添加備註'}
                 </small>
               )}
+
+              <div className="me-2" style={{ minWidth: '150px', maxWidth: '300px' }}>
+                {tagEditingIndex === index ? (
+                  <Typeahead
+                    id={`tag-typeahead-${title}-${index}`}
+                    multiple
+                    labelKey="name"
+                    options={allTags}
+                    placeholder={isReadOnly ? '' : '新增標籤...'}
+                    selected={item.tags || []}
+                    onChange={(selected) => handleItemTagChange(index, selected)}
+                    onBlur={() => setTagEditingIndex(null)}
+                    size="sm"
+                    disabled={isReadOnly}
+                    autoFocus
+                    renderToken={(option, { onRemove }, idx) => (
+                      <Badge key={idx} pill bg="secondary" className="me-1 mb-1 d-flex align-items-center">
+                        {option.name}
+                        {!isReadOnly && 
+                          <Button variant="link" size="sm" className="p-0 ms-1 text-white" onClick={() => onRemove(option)}>
+                            <FaTimes />
+                          </Button>
+                        }
+                      </Badge>
+                    )}
+                  />
+                ) : (
+                  <div className="d-flex align-items-center justify-content-end flex-wrap" onClick={() => handleTagEditStart(index)} style={{ cursor: 'pointer' }}>
+                    {(item.tags && item.tags.length > 0) ? (
+                      item.tags.map((tag, idx) => (
+                        <Badge key={idx} pill bg="secondary" className="ms-1">
+                          {tag.name}
+                        </Badge>
+                      ))
+                    ) : (
+                      !isReadOnly && <small className="text-muted fst-italic">無標籤</small>
+                    )}
+                    {!isReadOnly &&
+                      <span className="ms-2 text-primary"><FaTags size=".8em"/></span>
+                    }
+                  </div>
+                )}
+              </div>
               <Button variant="outline-danger" size="sm" onClick={() => handleRemoveItem(index)} disabled={isReadOnly}><FaTrash /></Button>
             </div>
           </li>
@@ -189,10 +204,10 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly }) => {
   );
 };
 
-const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onContentChange, onTitleChange, onSave, onDelete, onArchive, onUnarchive, onAddTag, onRemoveTag, onCarryOver, onMoveNote }) => {
+const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onContentChange, onTitleChange, onSave, onDelete, onArchive, onUnarchive, onCarryOver, onMoveNote }) => {
   const [isSaving, setIsSaving] = useState(false);
 
-  const isReadOnly = activeNote?.status === 'submitted';
+  const isReadOnly = false; // Previously: activeNote?.status === 'submitted';
 
   useEffect(() => {
     if (!activeNote || !activeNote.id || isReadOnly) return;
@@ -205,17 +220,15 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onContentChan
     return () => {
       clearTimeout(handler);
     };
-  }, [activeNote?.title, activeNote?.content, activeNote?.tags, isReadOnly, onSave]);
+  }, [activeNote?.title, activeNote?.content, isReadOnly, onSave]);
 
   const handleNoteSubmit = async () => {
-    if (window.confirm('您確定要提交這份周報嗎？提交後將無法修改。')) {
-      try {
-        await api.submitNote(activeNote.id);
-        setActiveNote({ ...activeNote, status: 'submitted' }); // Update local state
-        toast.success('周報提交成功！');
-      } catch (error) {
-        toast.error('提交失敗，請稍後再試。');
-      }
+    try {
+      await api.submitNote(activeNote.id);
+      setActiveNote({ ...activeNote, status: 'submitted' }); // Update local state
+      toast.success('周報提交成功！');
+    } catch (error) {
+      toast.error('提交失敗，請稍後再試。');
     }
   };
 
@@ -238,8 +251,8 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onContentChan
 
       return (
         <>
-          <WeeklyWorkList title="重點工作" items={activeNote.content.keyFocus || []} setItems={setKeyFocus} isReadOnly={isReadOnly} />
-          <WeeklyWorkList title="常規工作" items={activeNote.content.regularWork || []} setItems={setRegularWork} isReadOnly={isReadOnly} />
+          <WeeklyWorkList title="重點工作" items={activeNote.content.keyFocus || []} setItems={setKeyFocus} isReadOnly={isReadOnly} allTags={allTags} />
+          <WeeklyWorkList title="常規工作" items={activeNote.content.regularWork || []} setItems={setRegularWork} isReadOnly={isReadOnly} allTags={allTags} />
         </>
       )
     } else {
@@ -308,7 +321,6 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onContentChan
           </Button>
         </div>
       </div>
-      <TagManager noteTags={activeNote.tags} allTags={allTags} onAddTag={onAddTag} onRemoveTag={onRemoveTag} isReadOnly={isReadOnly} />
       {renderEditor()}
     </div>
   );
