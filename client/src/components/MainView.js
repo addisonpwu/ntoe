@@ -20,6 +20,7 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
   const [selectedFolderId, setSelectedFolderId] = useState('inbox');
   const [itemsToCarryOver, setItemsToCarryOver] = useState([]);
   const [sourceNoteForCarryOver, setSourceNoteForCarryOver] = useState(null);
+  const [modalContext, setModalContext] = useState('new'); // FIX: Add state definition
 
   const loadNotes = useCallback(() => {
     api.fetchNotes(noteStatusFilter, searchQuery, selectedTag?.id, selectedFolderId)
@@ -112,6 +113,7 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
     if (type === 'weekly' && (!startDate || !endDate)) {
       setItemsToCarryOver([]);
       setSourceNoteForCarryOver(null);
+      setModalContext('new'); // FIX: Set context
       setShowWeeklyNoteModal(true);
       return;
     }
@@ -239,6 +241,7 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
 
     setItemsToCarryOver(unfinishedItems.map(item => ({ ...item, completed: false })));
     setSourceNoteForCarryOver(activeNote);
+    setModalContext('carryOver'); // FIX: Set context
     setShowWeeklyNoteModal(true);
   };
 
@@ -299,6 +302,7 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
         show={showWeeklyNoteModal}
         handleClose={() => setShowWeeklyNoteModal(false)}
         handleCreate={handleCreateWeeklyNote}
+        modalContext={modalContext} // FIX: Pass prop
       />
       <ConfirmDeleteModal
         show={showConfirmDeleteModal}

@@ -15,18 +15,15 @@ const AggregationResultList = ({ title, items }) => (
     {items && items.length > 0 ? (
       <ListGroup variant="flush">
         {items.map((item, index) => (
-          <ListGroup.Item key={index} className="px-0 py-2">
-            <p className="mb-1">{item.text}</p>
-            <div className="mb-2">
+          <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center px-0 py-2">
+            <span>{item.text}</span>
+            <div>
               {item.tags.map(tag => (
-                <Badge key={tag} pill bg="info" className="me-1 fw-normal">
+                <Badge key={tag} pill bg="info" className="ms-1 fw-normal">
                   {tag}
                 </Badge>
               ))}
             </div>
-            <small className="text-muted">
-              提交人: {item.submitters.join(', ')}
-            </small>
           </ListGroup.Item>
         ))}
       </ListGroup>

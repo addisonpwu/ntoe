@@ -1,15 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 
-const NewWeeklyNoteModal = ({ show, handleClose, handleCreate }) => {
+const NewWeeklyNoteModal = ({ show, handleClose, handleCreate, modalContext }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  useEffect(() => {
+    if (show) {
+      const format = (date) => date.toISOString().split('T')[0];
+      const today = new Date();
+      const day = today.getDay(); // Sunday - 0, Monday - 1, ..., Saturday - 6
+      const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1);
+      
+      const currentMonday = new Date(new Date().setDate(diffToMonday));
+
+      let monday;
+      if (modalContext === 'carryOver') {
+        // Set to next week
+        monday = new Date(currentMonday.setDate(currentMonday.getDate() + 7));
+      } else {
+        // Set to current week
+        monday = currentMonday;
+      }
+
+      const friday = new Date(monday);
+      friday.setDate(monday.getDate() + 4);
+
+      setStartDate(format(monday));
+      setEndDate(format(friday));
+    }
+  }, [show, modalContext]);
 
   const onCreateClick = () => {
     if (startDate && endDate) {
       handleCreate(startDate, endDate);
-      setStartDate('');
-      setEndDate('');
     }
   };
 
