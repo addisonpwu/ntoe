@@ -224,9 +224,9 @@ const submitNote = async (req, res) => {
   const userId = req.user.id;
   try {
     const { id } = req.params;
-    // Make sure user can only submit their own weekly notes that are currently drafts.
+    // Set status to submitted and also mark that it has been submitted at least once.
     const [result] = await pool.query(
-      "UPDATE notes SET status = 'submitted' WHERE id = ? AND user_id = ? AND type = 'weekly' AND status = 'draft'", 
+      "UPDATE notes SET status = 'submitted', has_been_submitted = TRUE WHERE id = ? AND user_id = ? AND type = 'weekly' AND status = 'draft'", 
       [id, userId]
     );
 

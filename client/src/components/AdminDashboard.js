@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Container, Row, Col, Nav, Modal, Button, Form, Alert, ListGroup, Badge } from 'react-bootstrap';
-import { FaTachometerAlt, FaFileAlt, FaUsers, FaTags, FaAngleLeft, FaAngleRight } from 'react-icons/fa';
+import { FaFileAlt, FaUsers, FaTags, FaAngleLeft, FaAngleRight, FaSync } from 'react-icons/fa';
 import * as api from '../api';
 import { useSortableData } from '../hooks/useSortableData';
 
-import StatsCards from './StatsCards';
 import SubmittedNotesView from './SubmittedNotesView';
 import UserManagementView from './UserManagementView';
 import TagManagementView from './TagManagementView';
@@ -38,12 +37,12 @@ const AggregationResultList = ({ title, items }) => (
 );
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState(null);
-  const [notes, setNotes] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [notes, setNotes] = useState(null);
+  const [users, setUsers] = useState(null);
   const [error, setError] = useState('');
-  const [activeView, setActiveView] = useState('dashboard');
+  const [activeView, setActiveView] = useState('notes');
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [showUserModal, setShowUserModal] = useState(false);
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'member' });
@@ -60,24 +59,45 @@ const AdminDashboard = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const submittedWeeklyNotes = useMemo(() => {
-    return notes
-      .filter(n => n.type === 'weekly' && n.status === 'submitted')
-      .map(n => {
-        if (typeof n.content === 'string') {
-          try {
-            return { ...n, content: JSON.parse(n.content) };
-          } catch (e) {
-            console.error("Failed to parse note content:", n.content);
-            return { ...n, content: {} };
-          }
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [notesRes, usersRes] = await Promise.all([
+        api.fetchAllNotes(),
+        api.fetchUsers(),
+      ]);
+      setNotes(notesRes.data);
+      setUsers(usersRes.data);
+    } catch (err) {
+      setError('Failed to fetch admin data.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // The backend now sends only notes that have been submitted at least once.
+  // We just need to parse the content.
+  const parsedNotes = useMemo(() => {
+    if (!notes) return [];
+    return notes.map(n => {
+      if (typeof n.content === 'string') {
+        try {
+          return { ...n, content: JSON.parse(n.content) };
+        } catch (e) {
+          console.error("Failed to parse note content:", n.content);
+          return { ...n, content: {} };
         }
-        return n;
-      });
+      }
+      return n;
+    });
   }, [notes]);
 
-  const { items: sortedUsers, requestSort: requestUserSort, sortConfig: userSortConfig } = useSortableData(users, { key: 'id', direction: 'ascending' });
-  const { items: sortedNotes, requestSort: requestNoteSort, sortConfig: noteSortConfig } = useSortableData(submittedWeeklyNotes, { key: 'updated_at', direction: 'descending' });
+  const { items: sortedUsers, requestSort: requestUserSort, sortConfig: userSortConfig } = useSortableData(users || [], { key: 'id', direction: 'ascending' });
+  const { items: sortedNotes, requestSort: requestNoteSort, sortConfig: noteSortConfig } = useSortableData(parsedNotes, { key: 'updated_at', direction: 'descending' });
 
   const filteredNotes = useMemo(() => {
     if (!startDate && !endDate) {
@@ -96,20 +116,6 @@ const AdminDashboard = () => {
       return true;
     });
   }, [sortedNotes, startDate, endDate]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [statsRes, notesRes, usersRes] = await Promise.all([api.fetchAdminStats(), api.fetchAllNotes(), api.fetchUsers()]);
-        setStats(statsRes.data);
-        setNotes(notesRes.data);
-        setUsers(usersRes.data);
-      } catch (err) {
-        setError('Failed to fetch admin data.');
-      }
-    };
-    fetchData();
-  }, []);
 
   const handleShowUserModal = () => setShowUserModal(true);
   const handleCloseUserModal = () => { 
@@ -183,24 +189,28 @@ const AdminDashboard = () => {
   };
 
   const renderActiveView = () => {
+    if (loading || !notes || !users) {
+      return <div className="p-4 text-center"><h5>Loading...</h5></div>;
+    }
+
     switch (activeView) {
-      case 'dashboard': return <StatsCards stats={stats} />;
-      case 'notes': return <SubmittedNotesView 
-                              notes={filteredNotes} 
-                              users={users} 
-                              onSelectionChange={handleNoteSelectionChange} 
-                              selectedIds={selectedNoteIds} 
-                              onAggregate={handleAggregate} 
-                              isAggregating={isAggregating}
-                              onSelectAll={handleSelectAllNotes}
-                              areAllSelected={selectedNoteIds.size === filteredNotes.length && filteredNotes.length > 0}
-                              onSort={requestNoteSort}
-                              sortConfig={noteSortConfig}
-                              startDate={startDate}
-                              setStartDate={setStartDate}
-                              endDate={endDate}
-                              setEndDate={setEndDate}
-                            />;
+      case 'notes': 
+        return <SubmittedNotesView 
+                                notes={filteredNotes}
+                                users={users} 
+                                onSelectionChange={handleNoteSelectionChange} 
+                                selectedIds={selectedNoteIds} 
+                                onAggregate={handleAggregate} 
+                                isAggregating={isAggregating}
+                                onSelectAll={handleSelectAllNotes}
+                                areAllSelected={selectedNoteIds.size === filteredNotes.length && filteredNotes.length > 0}
+                                onSort={requestNoteSort}
+                                sortConfig={noteSortConfig}
+                                startDate={startDate}
+                                setStartDate={setStartDate}
+                                endDate={endDate}
+                                setEndDate={setEndDate}
+                              />;
       case 'users': return <UserManagementView 
                               users={sortedUsers} 
                               onShowModal={handleShowUserModal} 
@@ -209,24 +219,20 @@ const AdminDashboard = () => {
                               sortConfig={userSortConfig}
                             />;
       case 'tags': return <TagManagementView />;
-      default: return <StatsCards stats={stats} />;
+      default: return <div className="p-4">Please select a view.</div>;
     }
   };
-
-  if (!stats) return <Container fluid className="p-4 text-center"><h5>Loading...</h5></Container>;
 
   return (
     <div className="d-flex">
         <div className={`admin-sidebar bg-light vh-100 p-3 shadow-sm ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-            <div className="admin-sidebar-header mb-4">
+            <div className="admin-sidebar-header mb-4 d-flex justify-content-between align-items-center">
                 <h4 className="fw-bold text-truncate">管理後台</h4>
+                <Button variant="light" onClick={fetchData} disabled={loading} className="d-none d-md-block">
+                    <FaSync className={loading ? 'fa-spin' : ''} />
+                </Button>
             </div>
             <Nav variant="pills" activeKey={activeView} onSelect={setActiveView} className="flex-column">
-                <Nav.Item className="mb-2">
-                    <Nav.Link eventKey="dashboard" title="儀表盤">
-                        <FaTachometerAlt className="me-2" /> <span>儀表盤</span>
-                    </Nav.Link>
-                </Nav.Item>
                 <Nav.Item className="mb-2">
                     <Nav.Link eventKey="notes" title="周報審批">
                         <FaFileAlt className="me-2" /> <span>周報審批</span>

@@ -87,25 +87,6 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
     }
   };
 
-  const handleContentChange = (content) => {
-    const newState = { ...activeNote, content };
-    if (activeNote.type === 'weekly' && activeNote.status === 'submitted') {
-      newState.status = 'draft';
-      toast.info('周報已變更，請記得重新提交。', { toastId: 'note-changed' });
-    }
-    setActiveNote(newState);
-  };
-
-  const handleTitleChange = (e) => {
-    const newTitle = e.target.value;
-    const newState = { ...activeNote, title: newTitle };
-    if (activeNote.type === 'weekly' && activeNote.status === 'submitted') {
-      newState.status = 'draft';
-      toast.info('周報已變更，請記得重新提交。', { toastId: 'note-changed' });
-    }
-    setActiveNote(newState);
-  };
-
   const handleSave = () => {
     if (!activeNote) return Promise.resolve();
 
@@ -118,7 +99,6 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
       .then((response) => {
         if (response.data.status) {
           setActiveNote(prev => ({ ...prev, status: response.data.status }));
-          toast.info('周報已更新，請記得重新提交。');
         }
         loadNotes();
       })
@@ -239,7 +219,10 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
       .catch(() => toast.error('還原筆記失敗。'));
   };
 
-  
+  const handleSubmissionComplete = () => {
+    loadNotes();
+    setActiveNote(null);
+  };
 
   const handleCarryOver = () => {
     if (!activeNote || activeNote.type !== 'weekly') return;
@@ -301,16 +284,14 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
       />
       <NoteEditor 
         activeNote={activeNote}
-        setActiveNote={setActiveNote} // Pass setter function
+        setActiveNote={setActiveNote}
         allTags={tags}
         folders={folders}
-        onContentChange={handleContentChange}
-        onTitleChange={handleTitleChange}
         onSave={handleSave}
         onDelete={handleDeleteRequest}
         onArchive={handleArchive}
         onUnarchive={handleUnarchive}
-        
+        onSubmissionComplete={handleSubmissionComplete}
         onCarryOver={handleCarryOver}
         onMoveNote={handleMoveNote}
       />

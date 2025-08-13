@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button, Spinner, Dropdown, Badge } from 'react-bootstrap';
 import { FaTrash, FaPlus, FaArchive, FaInbox, FaTimes, FaArrowRight, FaFolderOpen, FaRegStickyNote, FaPaperPlane, FaTags } from 'react-icons/fa';
 import { Typeahead } from 'react-bootstrap-typeahead';
@@ -20,7 +20,7 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly, allTags }) => {
     const newItems = [...(items || []), { text: newItemText.trim(), completed: false, notes: '', tags: [] }];
     setItems(newItems);
     setNewItemText('');
-    setTagEditingIndex(newItems.length - 1); // Auto-open tag editor for the new item
+    setTagEditingIndex(newItems.length - 1);
   };
 
   const handleRemoveItem = (index) => {
@@ -89,7 +89,6 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly, allTags }) => {
       <ul className="list-group mb-2">
         {(items || []).map((item, index) => (
           <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
-            {/* Left side: checkbox and text */}
             <div className="d-flex align-items-center flex-grow-1 me-3">
               <input 
                 type="checkbox" 
@@ -117,8 +116,6 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly, allTags }) => {
                 </span>
               )}
             </div>
-
-            {/* Right side: notes, tags, and delete button */}
             <div className="d-flex align-items-center">
               {editingIndex === index && editingField === 'notes' ? (
                 <input
@@ -139,7 +136,6 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly, allTags }) => {
                   {item.notes || '添加備註'}
                 </small>
               )}
-
               <div className="me-2" style={{ minWidth: '150px', maxWidth: '300px' }}>
                 {tagEditingIndex === index ? (
                   <Typeahead
@@ -204,32 +200,87 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly, allTags }) => {
   );
 };
 
-const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onContentChange, onTitleChange, onSave, onDelete, onArchive, onUnarchive, onCarryOver, onMoveNote }) => {
+const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDelete, onArchive, onUnarchive, onCarryOver, onMoveNote, onSubmissionComplete }) => {
   const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const saveTimerRef = useRef(null);
 
-  const isReadOnly = false; // Previously: activeNote?.status === 'submitted';
+  const isReadOnly = false;
 
+  // Reset dirty flag when a new note is selected
   useEffect(() => {
-    if (!activeNote || !activeNote.id || isReadOnly) return;
+    setIsDirty(false);
+  }, [activeNote?.id]);
 
+  // Auto-save when dirty
+  useEffect(() => {
+    if (!isDirty || !activeNote || !activeNote.id) return;
+
+    clearTimeout(saveTimerRef.current);
     setIsSaving(true);
-    const handler = setTimeout(() => {
-      onSave().finally(() => setIsSaving(false));
+    saveTimerRef.current = setTimeout(() => {
+      onSave().then(() => {
+        setIsDirty(false);
+      }).finally(() => {
+        setIsSaving(false);
+      });
     }, 1500);
 
     return () => {
-      clearTimeout(handler);
+      clearTimeout(saveTimerRef.current);
     };
-  }, [activeNote?.title, activeNote?.content, isReadOnly, onSave]);
+  }, [activeNote, isDirty, onSave]);
 
-  const handleNoteSubmit = async () => {
-    try {
-      await api.submitNote(activeNote.id);
-      setActiveNote({ ...activeNote, status: 'submitted' }); // Update local state
-      toast.success('周報提交成功！');
-    } catch (error) {
-      toast.error('提交失敗，請稍後再試。');
+  const handleContentChange = (content) => {
+    setIsDirty(true);
+    const newState = { ...activeNote, content };
+    if (activeNote.type === 'weekly' && activeNote.status === 'submitted') {
+      newState.status = 'draft';
+      toast.info('周報已變更，請記得重新提交。', { toastId: 'note-changed' });
     }
+    setActiveNote(newState);
+  };
+
+  const handleTitleChange = (e) => {
+    setIsDirty(true);
+    const newTitle = e.target.value;
+    const newState = { ...activeNote, title: newTitle };
+    if (activeNote.type === 'weekly' && activeNote.status === 'submitted') {
+      newState.status = 'draft';
+      toast.info('周報已變更，請記得重新提交。', { toastId: 'note-changed' });
+    }
+    setActiveNote(newState);
+  };
+
+  const handleNoteSubmit = () => {
+    clearTimeout(saveTimerRef.current);
+    
+    const unfinishedItems = [
+      ...(activeNote.content.keyFocus || []),
+      ...(activeNote.content.regularWork || [])
+    ].filter(item => !item.completed);
+
+    if (unfinishedItems.length > 0) {
+      toast.warn('您有未完成的項目，請先完成或使用「轉移」功能。');
+      return;
+    }
+
+    setIsSaving(true);
+    onSave()
+      .then(() => {
+        return api.submitNote(activeNote.id);
+      })
+      .then(() => {
+        toast.success('周報提交成功！');
+        setIsDirty(false);
+        onSubmissionComplete();
+      })
+      .catch(() => {
+        toast.error('提交失敗，請稍後再試。');
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
   };
 
   if (!activeNote) {
@@ -246,8 +297,8 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onContentChan
 
   const renderEditor = () => {
     if (activeNote.type === 'weekly') {
-      const setKeyFocus = (items) => onContentChange({ ...activeNote.content, keyFocus: items });
-      const setRegularWork = (items) => onContentChange({ ...activeNote.content, regularWork: items });
+      const setKeyFocus = (items) => handleContentChange({ ...activeNote.content, keyFocus: items });
+      const setRegularWork = (items) => handleContentChange({ ...activeNote.content, regularWork: items });
 
       return (
         <>
@@ -261,7 +312,7 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onContentChan
           <textarea 
             className="editor-pane"
             value={activeNote.content}
-            onChange={(e) => onContentChange(e.target.value)}
+            onChange={(e) => handleContentChange(e.target.value)}
             placeholder="# Your markdown here..."
             readOnly={isReadOnly}
           />
@@ -278,7 +329,7 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onContentChan
   return (
     <div className="note-editor-container d-flex flex-column">
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <input type="text" className="form-control form-control-lg me-2" value={activeNote.title} onChange={onTitleChange} readOnly={isReadOnly} />
+        <input type="text" className="form-control form-control-lg me-2" value={activeNote.title} onChange={handleTitleChange} readOnly={isReadOnly} />
         <div className="d-flex align-items-center">
           {isSaving && <Spinner animation="border" size="sm" className="me-2" />}
           

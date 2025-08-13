@@ -20,7 +20,7 @@ const getStats = async (req, res) => {
 
 const getAllNotes = async (req, res) => {
   try {
-    const [notes] = await pool.query('SELECT * FROM notes ORDER BY updated_at DESC');
+    const [notes] = await pool.query("SELECT * FROM notes WHERE has_been_submitted = TRUE ORDER BY updated_at DESC");
     res.json(notes);
   } catch (error) {
     console.error('Error fetching all notes:', error);
@@ -90,7 +90,7 @@ const aggregateWeeklyNotes = async (req, res) => {
       SELECT n.content, u.username 
       FROM notes n 
       JOIN users u ON n.user_id = u.id 
-      WHERE n.id IN (?) AND n.type = 'weekly' AND n.status = 'submitted'
+      WHERE n.id IN (?) AND n.type = 'weekly' AND n.has_been_submitted = TRUE
     `;
 
     const [notes] = await pool.query(query, [noteIds]);
