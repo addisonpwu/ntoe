@@ -8,7 +8,8 @@ const pool = mysql.createPool({
   database: 'notes_db',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  timezone: 'Z'
 });
 
 // Function to create and update tables
