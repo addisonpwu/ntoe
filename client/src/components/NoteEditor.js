@@ -344,7 +344,7 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDel
               <FaFolderOpen className="me-1" /> 移動
             </Dropdown.Toggle>
             <Dropdown.Menu>
-              <Dropdown.Item onClick={() => onMoveNote(null)}>收件匣</Dropdown.Item>
+              <Dropdown.Item onClick={() => onMoveNote(null)}>未分類</Dropdown.Item>
               {folders.map(folder => (
                 <Dropdown.Item key={folder.id} onClick={() => onMoveNote(folder.id)}>{folder.name}</Dropdown.Item>
               ))}

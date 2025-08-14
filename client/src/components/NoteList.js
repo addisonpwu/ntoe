@@ -75,7 +75,7 @@ const NoteList = ({
               <Accordion.Body>
                 <ListGroup variant="flush">
                   <ListGroup.Item action active={selectedFolderId === 'inbox'} onClick={() => setSelectedFolderId('inbox')} className="d-flex justify-content-between align-items-center">
-                    <span><FaInbox className="me-2" /> 收件匣</span>
+                    <span><FaInbox className="me-2" /> 未分類</span>
                     <Badge bg="secondary" pill>{inboxNoteCount}</Badge>
                   </ListGroup.Item>
                   {folders.map(folder => (
