@@ -90,20 +90,12 @@ const updateNote = async (req, res) => {
       return res.status(404).json({ message: 'Note not found or permission denied.' });
     }
 
-    // If a submitted weekly note is updated, revert its status to draft
-    if (note.type === 'weekly' && note.status === 'submitted') {
-      await pool.query(
-        'UPDATE notes SET title = ?, content = ?, status = \'draft\' WHERE id = ? AND user_id = ?',
-        [title, contentJSON, id, userId]
-      );
-      res.json({ message: 'Weekly note updated and status reverted to draft.', status: 'draft' });
-    } else {
-      await pool.query(
-        'UPDATE notes SET title = ?, content = ? WHERE id = ? AND user_id = ?',
-        [title, contentJSON, id, userId]
-      );
-      res.json({ message: 'Note updated successfully' });
-    }
+    // If a submitted weekly note is updated, its status will no longer be reverted to draft.
+    await pool.query(
+      'UPDATE notes SET title = ?, content = ? WHERE id = ? AND user_id = ?',
+      [title, contentJSON, id, userId]
+    );
+    res.json({ message: 'Note updated successfully' });
   } catch (error) {
     console.error(`PUT /api/notes/${id} Error:`, error);
     res.status(500).json({ error: error.message });
@@ -222,19 +214,35 @@ const removeTagFromNote = async (req, res) => {
 // Submit a weekly note
 const submitNote = async (req, res) => {
   const userId = req.user.id;
+  const { id } = req.params;
   try {
-    const { id } = req.params;
-    // Set status to submitted and also mark that it has been submitted at least once.
+    // Try to update the note from 'draft' to 'submitted'
     const [result] = await pool.query(
-      "UPDATE notes SET status = 'submitted', has_been_submitted = TRUE WHERE id = ? AND user_id = ? AND type = 'weekly' AND status = 'draft'", 
+      "UPDATE notes SET status = 'submitted' WHERE id = ? AND user_id = ? AND type = 'weekly' AND status = 'draft'",
       [id, userId]
     );
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Weekly note not found, not a draft, or permission denied.' });
+    // If the update worked, we're done.
+    if (result.affectedRows > 0) {
+      return res.json({ message: 'Weekly note submitted successfully' });
     }
 
-    res.json({ message: 'Weekly note submitted successfully' });
+    // If no rows were affected, it might be because the note doesn't exist, or it's not a draft.
+    // Let's check the current state of the note.
+    const [[note]] = await pool.query("SELECT status, type FROM notes WHERE id = ? AND user_id = ?", [id, userId]);
+
+    if (!note) {
+      return res.status(404).json({ message: 'Note not found or permission denied.' });
+    }
+
+    if (note.type === 'weekly' && note.status === 'submitted') {
+      // The note is already submitted, which is not an error in this context.
+      return res.json({ message: 'Note was already submitted.' });
+    }
+
+    // If it's not a draft and not already submitted (e.g., wrong type), it's a bad request.
+    res.status(400).json({ message: 'Note is not a draft weekly note and cannot be submitted.' });
+
   } catch (error) {
     console.error(`POST /api/notes/${id}/submit Error:`, error);
     res.status(500).json({ error: error.message });
