@@ -27,8 +27,9 @@ router.post('/users', adminController.createUser);
 // DELETE /api/admin/users/:id
 router.delete('/users/:id', adminController.deleteUser);
 
-// --- Aggregation --- //
+// --- Aggregation & Reporting --- //
 router.post('/aggregate', adminController.aggregateWeeklyNotes);
+router.post('/download-report', adminController.downloadReport);
 
 
 module.exports = router;
