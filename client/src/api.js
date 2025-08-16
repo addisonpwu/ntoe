@@ -46,6 +46,7 @@ export const fetchUsers = () => apiClient.get('/admin/users');
 export const createUser = (userData) => apiClient.post('/admin/users', userData);
 export const deleteUser = (userId) => apiClient.delete(`/admin/users/${userId}`);
 export const aggregateWeeklyNotes = (noteIds) => apiClient.post('/admin/aggregate', { noteIds });
+export const downloadReport = (reportData) => apiClient.post('/admin/download-report', reportData, { responseType: 'blob' });
 
 // Note Actions
 export const submitNote = (noteId) => apiClient.post(`/notes/${noteId}/submit`);

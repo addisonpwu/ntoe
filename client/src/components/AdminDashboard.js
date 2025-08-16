@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Container, Row, Col, Nav, Modal, Button, Form, Alert, ListGroup, Badge } from 'react-bootstrap';
-import { FaFileAlt, FaUsers, FaTags, FaAngleLeft, FaAngleRight, FaSync } from 'react-icons/fa';
+import { Container, Row, Col, Nav, Modal, Button, Form, Alert, ListGroup, Badge, Spinner } from 'react-bootstrap';
+import { FaFileAlt, FaUsers, FaTags, FaAngleLeft, FaAngleRight, FaSync, FaDownload } from 'react-icons/fa';
 import * as api from '../api';
 import { useSortableData } from '../hooks/useSortableData';
 
@@ -48,6 +48,7 @@ const AdminDashboard = () => {
   const [showAggregationModal, setShowAggregationModal] = useState(false);
   const [aggregatedResult, setAggregatedResult] = useState(null);
   const [isAggregating, setIsAggregating] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
@@ -184,6 +185,34 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDownloadReport = async () => {
+    if (selectedNoteIds.size === 0) {
+      setError('Please select at least one note to generate a report.');
+      return;
+    }
+    setIsDownloading(true);
+    try {
+      const payload = {
+        noteIds: Array.from(selectedNoteIds),
+        startDate: startDate,
+        endDate: endDate
+      };
+      const response = await api.downloadReport(payload);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'WeeklyReport.docx');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      setError('Failed to download report.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const renderActiveView = () => {
     if (loading || !notes || !users) {
       return <div className="p-4 text-center"><h5>Loading...</h5></div>;
@@ -288,13 +317,19 @@ const AdminDashboard = () => {
         <Modal.Body>
           {aggregatedResult && (
             <>
-              <AggregationResultList title="重點工作" items={aggregatedResult.keyFocus} />
+              <AggregationResultList title="重點及專項工作" items={aggregatedResult.keyFocus} />
               <hr />
               <AggregationResultList title="常規工作" items={aggregatedResult.regularWork} />
             </>
           )}
         </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={() => setShowAggregationModal(false)}>關閉</Button></Modal.Footer>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowAggregationModal(false)}>關閉</Button>
+          <Button variant="primary" onClick={handleDownloadReport} disabled={isDownloading}>
+            {isDownloading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : <FaDownload className="me-2"/>}
+            下載 Word
+          </Button>
+        </Modal.Footer>
       </Modal>
       
       <Modal show={showConfirmDeleteModal} onHide={() => setShowConfirmDeleteModal(false)} centered>

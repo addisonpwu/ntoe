@@ -302,7 +302,7 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDel
 
       return (
         <>
-          <WeeklyWorkList title="重點工作" items={activeNote.content.keyFocus || []} setItems={setKeyFocus} isReadOnly={isReadOnly} allTags={allTags} />
+          <WeeklyWorkList title="重點及專項工作" items={activeNote.content.keyFocus || []} setItems={setKeyFocus} isReadOnly={isReadOnly} allTags={allTags} />
           <WeeklyWorkList title="常規工作" items={activeNote.content.regularWork || []} setItems={setRegularWork} isReadOnly={isReadOnly} allTags={allTags} />
         </>
       )
