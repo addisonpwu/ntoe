@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Spinner, Dropdown, Badge } from 'react-bootstrap';
+import { Button, Spinner, Dropdown, Badge, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { FaTrash, FaPlus, FaArchive, FaInbox, FaTimes, FaArrowRight, FaFolderOpen, FaRegStickyNote, FaPaperPlane, FaTags } from 'react-icons/fa';
 import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
@@ -334,15 +334,19 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDel
           {isSaving && <Spinner animation="border" size="sm" className="me-2" />}
           
           {activeNote.type === 'weekly' && activeNote.status === 'draft' && (
-            <Button variant="success" onClick={handleNoteSubmit} className="me-2">
-              <FaPaperPlane className="me-1" /> 提交周報
-            </Button>
+            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-submit">提交周報</Tooltip>}>
+              <Button variant="success" onClick={handleNoteSubmit} className="me-2">
+                <FaPaperPlane />
+              </Button>
+            </OverlayTrigger>
           )}
 
           <Dropdown className="me-2">
-            <Dropdown.Toggle variant="outline-secondary" id="dropdown-move" disabled={isReadOnly}>
-              <FaFolderOpen className="me-1" /> 移動
-            </Dropdown.Toggle>
+            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-move">移動</Tooltip>}>
+              <Dropdown.Toggle variant="outline-secondary" id="dropdown-move" disabled={isReadOnly}>
+                <FaFolderOpen />
+              </Dropdown.Toggle>
+            </OverlayTrigger>
             <Dropdown.Menu>
               <Dropdown.Item onClick={() => onMoveNote(null)}>未分類</Dropdown.Item>
               {folders.map(folder => (
@@ -352,24 +356,32 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDel
           </Dropdown>
           
           {activeNote.type === 'weekly' && !activeNote.archived && (
-            <Button variant="outline-success" onClick={onCarryOver} className="me-2" disabled={isReadOnly}>
-              <FaArrowRight className="me-1" /> 轉移
-            </Button>
+            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-carryover">轉移</Tooltip>}>
+              <Button variant="outline-secondary" onClick={onCarryOver} className="me-2" disabled={isReadOnly}>
+                <FaArrowRight />
+              </Button>
+            </OverlayTrigger>
           )}
 
           {activeNote.archived ? (
-            <Button variant="secondary" onClick={onUnarchive} className="me-2">
-              <FaInbox className="me-1" /> 還原
-            </Button>
+            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-unarchive">還原</Tooltip>}>
+              <Button variant="outline-secondary" onClick={onUnarchive} className="me-2">
+                <FaInbox />
+              </Button>
+            </OverlayTrigger>
           ) : (
-            <Button variant="secondary" onClick={onArchive} className="me-2" disabled={isReadOnly}>
-              <FaArchive className="me-1" /> 封存
-            </Button>
+            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-archive">封存</Tooltip>}>
+              <Button variant="outline-secondary" onClick={onArchive} className="me-2" disabled={isReadOnly}>
+                <FaArchive />
+              </Button>
+            </OverlayTrigger>
           )}
 
-          <Button variant="danger" onClick={onDelete} disabled={isReadOnly}>
-            <FaTrash className="me-1" /> 刪除
-          </Button>
+          <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-delete">刪除</Tooltip>}>
+            <Button variant="outline-danger" onClick={onDelete} disabled={isReadOnly}>
+              <FaTrash />
+            </Button>
+          </OverlayTrigger>
         </div>
       </div>
       {renderEditor()}
