@@ -121,7 +121,16 @@ const aggregateWeeklyNotes = async (req, res) => {
     };
 
     for (const note of notes) {
-      const content = note.content;
+      let content;
+      try {
+        content = JSON.parse(note.content);
+      } catch (e) {
+        content = note.content;
+      }
+
+      if (typeof content !== 'object' || content === null) {
+        continue;
+      }
       if (content.keyFocus && Array.isArray(content.keyFocus)) {
         content.keyFocus.forEach(item => processItem(keyFocusMap, item, note.username));
       }
@@ -131,8 +140,16 @@ const aggregateWeeklyNotes = async (req, res) => {
     }
 
     const aggregated = {
-      keyFocus: Array.from(keyFocusMap.values()).map(item => ({ ...item, submitters: Array.from(item.submitters) })),
-      regularWork: Array.from(regularWorkMap.values()).map(item => ({ ...item, submitters: Array.from(item.submitters) })),
+      keyFocus: Array.from(keyFocusMap.values()).map(item => {
+        const submitters = Array.from(item.submitters).join(', ');
+        const tagString = item.tags.length > 0 ? `[${item.tags.join(', ')}] ` : '';
+        return { content: `${tagString}${item.text} (提交人: ${submitters})` };
+      }),
+      regularWork: Array.from(regularWorkMap.values()).map(item => {
+        const submitters = Array.from(item.submitters).join(', ');
+        const tagString = item.tags.length > 0 ? `[${item.tags.join(', ')}] ` : '';
+        return { content: `${tagString}${item.text} (提交人: ${submitters})` };
+      }),
     };
 
     res.json(aggregated);
@@ -144,28 +161,76 @@ const aggregateWeeklyNotes = async (req, res) => {
 };
 
 const downloadReport = async (req, res) => {
-  console.log('--- FINAL DEBUG: Bypassing docxtemplater ---');
-  const { noteIds, startDate, endDate } = req.body;
-  console.log('Received body for final debug:', req.body);
+  const { aggregatedData, noteIds, startDate, endDate } = req.body;
+
+  if (!aggregatedData) {
+    return res.status(400).json({ message: 'Aggregated data is required.' });
+  }
 
   try {
-    const dateRange = (startDate && endDate)
-      ? `${new Date(startDate).toLocaleDateString('zh-TW')} - ${new Date(endDate).toLocaleDateString('zh-TW')}`
-      : '未指定日期範圍';
+    // Fetch all members who should submit a report
+    const [allMembers] = await pool.query("SELECT id, username FROM users WHERE role = 'member'");
 
-    const finalData = {
-      report_date: new Date().toLocaleDateString('zh-TW'),
-      date_range: dateRange,
-      note_ids_received: noteIds,
-      message: "This is a test response, bypassing Word generation."
+    // Fetch users who submitted the selected notes
+    let submittedUserIds = [];
+    if (noteIds && noteIds.length > 0) {
+      const [submittedNotes] = await pool.query("SELECT DISTINCT user_id FROM notes WHERE id IN (?)", [noteIds]);
+      submittedUserIds = submittedNotes.map(n => n.user_id);
+    }
+
+    // Determine unsubmitted users
+    const unsubmittedUsers = allMembers.filter(member => !submittedUserIds.includes(member.id));
+    const unsubmitted_list = unsubmittedUsers.map(user => user.username).join('、') || '無';
+
+    const templatePath = path.join(__dirname, '..', 'template', 'template.docx');
+    const content = fs.readFileSync(templatePath, 'binary');
+
+    const zip = new PizZip(content);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
+
+    const formatDate = (dateStr) => {
+      const d = new Date(dateStr);
+      return `${d.getMonth() + 1}月${d.getDate()}日`;
     };
 
-    console.log('Sending this JSON response:', finalData);
-    res.json(finalData);
+    const dateRange = (startDate && endDate)
+      ? `${formatDate(startDate)}-${formatDate(endDate)}`
+      : '未指定日期範圍';
+
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+    const day = today.getDate();
+    const report_date_formatted = `${year}年${month}月${day}日`;
+
+    doc.render({
+      report_date: report_date_formatted,
+      date_range: dateRange,
+      key_focus: aggregatedData.keyFocus,
+      regular_work: aggregatedData.regularWork,
+      test: '' /* 測試字段留空 */,
+      unsubmitted_list: unsubmitted_list,
+    });
+
+    const buf = doc.getZip().generate({
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+    });
+
+    const fileName = `Weekly_Report_${Date.now()}.docx`;
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.send(buf);
 
   } catch (error) {
-    console.error('Error in final debug endpoint:', error);
-    res.status(500).json({ message: 'Error in final debug. Check logs.' });
+    console.error('Error generating Word document:', error);
+    if (error.properties && error.properties.errors) {
+      console.error('Docxtemplater errors:', error.properties.errors);
+    }
+    res.status(500).json({ message: 'Failed to generate Word document.' });
   }
 };
 

@@ -1,66 +1,85 @@
-# Gemini Context: Full-Stack Note-Taking App (ntoe)
+# Gemini 上下文：全棧筆記應用 (ntoe)
 
-## Project Overview
+## 項目概述
 
-This is a full-stack note-taking application with a clear client-server architecture. The project's goal is to provide a simple and intuitive interface for creating, managing, and storing two types of notes: "normal" and "weekly".
+這是一個功能全面的全棧筆記應用程序，具有多用戶環境和基於角色的訪問控制。它為創建和組織筆記提供了豐富的用戶體驗，並為用戶和內容管理提供了完整的管理後台。該應用程序採用清晰的客戶端-服務器架構設計。
 
-### Technology Stack
+## 系統架構
 
-*   **Frontend:** The `client` directory contains a **React** single-page application (SPA), bootstrapped with `create-react-app`. It uses `axios` for API communication and `react-bootstrap` for UI components.
-*   **Backend:** The `server` directory contains a **Node.js** API server built with the **Express.js** framework. It provides a RESTful API for note management.
-*   **Database:** The application uses **MySQL 8.0** for its database, which is managed via Docker. The database schema includes a single `notes` table with fields for title, content (JSON), type, and timestamps.
-*   **Containerization & Proxy:** The project uses **Docker** (`docker-compose.yml`) to run the MySQL database service. The frontend is configured to be served by **Nginx**, which also acts as a reverse proxy, forwarding API requests from `/api/` to the backend service.
+*   **客戶端-服務器模型 (Client-Server Model):** 應用程序由一個 React 單頁應用（客戶端）和一個 Node.js/Express 後端 API（服務器）組成。
+*   **數據庫 (Database):** 使用 MySQL 數據庫存儲所有應用程序數據，包括用戶、筆記、標籤和文件夾。
+*   **容器化 (Containerization):** 整個技術棧被設計為容器友好的。Docker Compose 用於管理 MySQL 數據庫服務。
+*   **代理與服務 (Proxy & Serving):** 在容器化環境中，Nginx 用於提供前端靜態文件構建，並充當反向代理，將來自客戶端的 API 請求（例如 `/api/...`）轉發到後端服務器。這避免了 CORS 問題並簡化了部署。
 
-## Building and Running
+## 技術棧
 
-There are two primary ways to run this application, based on the project files.
+### 前端 (`client/`)
 
-### 1. Hybrid Docker & Local Development (As per README.md)
+*   **框架:** React (使用 `create-react-app` 啟動)
+*   **UI 組件:** React Bootstrap, React Icons
+*   **路由:** React Router (`react-router-dom`)
+*   **狀態管理:** React Context API (`AuthContext.js`)
+*   **API 通信:** Axios
+*   **內容渲染:** React Markdown (`react-markdown`, `remark-gfm`)
+*   **工具庫:** `react-bootstrap-typeahead`, `react-toastify` (用於通知)
 
-This approach uses Docker for the database and runs the frontend and backend services locally.
+### 後端 (`server/`)
 
-1.  **Start the Database:**
+*   **框架:** Node.js 與 Express.js
+*   **數據庫驅動:** `mysql2`
+*   **認證:** JSON Web Tokens (`jsonwebtoken`) 用於無狀態認證, `bcryptjs` 用於密碼哈希。
+*   **文檔生成:** `docx`, `docxtemplater`, `pizzip` 用於從模板創建 `.docx` 文件。
+*   **中間件:** `cors`
+*   **開發工具:** `nodemon` 用於服務器自動重啟。
+
+### 基礎設施
+
+*   **數據庫:** MySQL 8.0
+*   **容器化:** Docker (`docker-compose.yml`)
+*   **Web 服務器/代理:** Nginx
+
+## 主要功能
+
+*   **用戶認證:** 使用 JWT 的安全用戶註冊和登錄系統。
+*   **筆記管理:** 創建、讀取、更新和刪除筆記。
+*   **筆記類型:** 支持不同類型的筆記，如“普通筆記”和“周報”。
+*   **標籤系統:** 為筆記創建、分配和管理標籤。
+*   **文件夾組織:** 將筆記組織到文件夾中。
+*   **管理員儀表板:** 為管理員提供的受保護區域。
+    *   **用戶管理:** 查看和管理應用程序用戶。
+    *   **已提交筆記:** 查看已提交的筆記。
+    *   **標籤管理:** 全局管理所有標籤。
+*   **文檔導出:** 能夠將數據導出為 `.docx` 格式。
+
+## 構建與運行
+
+主要的開發工作流程是在 Docker 中運行數據庫，並在本地運行客戶端/服務器應用程序。
+
+1.  **啟動數據庫:**
     ```bash
-    # Starts the MySQL container in the background
+    # 在後台啟動 MySQL 容器
     docker-compose up -d db
     ```
 
-2.  **Run the Backend Server:**
+2.  **運行後端服務器:**
     ```bash
-    # Navigate to the server directory
     cd server
-    # Install dependencies
     npm install
-    # Start the server in development mode (with nodemon)
     npm run dev
     ```
-    The server will be available at `http://localhost:3001`.
+    API 服務器將在 `http://localhost:3001` 上可用。
 
-3.  **Run the Frontend Client:**
+3.  **運行前端客戶端:**
     ```bash
-    # Navigate to the client directory
     cd client
-    # Install dependencies
     npm install
-    # Start the React development server
     npm start
     ```
-    The client will be available at `http://localhost:3000`.
+    React 開發服務器將在 `http://localhost:3000` 上可用。
 
-### 2. Fully Containerized (Inferred from nginx.conf)
+## 開發約定
 
-The `nginx.conf` file implies a fully containerized setup where Nginx, the client, and the API server run in Docker containers on the same network. This setup is not yet fully defined in the `docker-compose.yml`.
-
-```
-<!--
-TODO: The docker-compose.yml file should be updated to include the `client` and `api` services to enable a single `docker-compose up` command for the entire application stack. The Nginx config expects an `api` service hostname.
--->
-```
-
-## Development Conventions
-
-*   **API:** The backend exposes a RESTful API with endpoints like `/api/notes` and `/api/health`.
-*   **Backend Development:** The `dev` script uses `nodemon` to automatically restart the server on file changes.
-*   **Frontend Development:** The frontend uses `react-scripts` for development, building, and testing. Standard `create-react-app` conventions apply.
-*   **Dependencies:** All dependencies are managed via `npm` in their respective `client` and `server` directories.
-*   **Database Schema:** The `notes` table schema is defined in the `README.md`. The `content` field is of type JSON, allowing for flexible note structures.
+*   **API 設計:** 後端提供模塊化的 RESTful API。路由按資源（`admin`, `auth`, `notes`, `tags`, `folders`）在 `server/routes/` 目錄中進行組織。
+*   **數據庫遷移:** 數據庫模式通過位於 `server/scripts/` 中的版本化 SQL 腳本進行管理。這允許系統地跟踪和應用模式更改。
+*   **開發環境:** 前端開發服務器使用代理（`package.json` 中的 `"proxy": "http://localhost:3001"`）將 API 請求轉發到後端，以避免在開發過程中出現 CORS 問題。
+*   **代碼風格:** 項目遵循 React 和 Node.js/Express 應用的標準約定。

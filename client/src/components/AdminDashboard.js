@@ -15,14 +15,8 @@ const AggregationResultList = ({ title, items }) => (
     {items && items.length > 0 ? (
       <ListGroup variant="flush">
         {items.map((item, index) => (
-          <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center px-0 py-2">
-            <span>
-              {item.tags && item.tags.length > 0 ? `[${item.tags.join(', ')}] ` : ''}
-              {item.text}
-            </span>
-            <span className="text-muted small">
-              {item.submitters && item.submitters.join(', ')}
-            </span>
+          <ListGroup.Item key={index} className="px-0 py-2">
+            <span>{item.content}</span>
           </ListGroup.Item>
         ))}
       </ListGroup>
@@ -73,6 +67,26 @@ const AdminDashboard = () => {
   }, []);
 
   useEffect(() => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // Sunday: 0, Monday: 1, ..., Saturday: 6
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diffToMonday);
+
+    const friday = new Date(monday);
+    friday.setDate(monday.getDate() + 4);
+
+    const formatDate = (date) => {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    setStartDate(formatDate(monday));
+    setEndDate(formatDate(friday));
+
     fetchData();
   }, [fetchData]);
 
@@ -193,6 +207,7 @@ const AdminDashboard = () => {
     setIsDownloading(true);
     try {
       const payload = {
+        aggregatedData: aggregatedResult,
         noteIds: Array.from(selectedNoteIds),
         startDate: startDate,
         endDate: endDate
