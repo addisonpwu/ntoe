@@ -265,7 +265,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="d-flex">
-        <div className={`admin-sidebar bg-light vh-100 p-3 shadow-sm ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+        <div className={`admin-sidebar vh-100 p-3 glass-effect ${isSidebarCollapsed ? 'collapsed' : ''}`}>
             <div className="admin-sidebar-header mb-4 d-flex justify-content-between align-items-center">
                 <h4 className="fw-bold text-truncate">管理後台</h4>
                 <Button variant="light" onClick={fetchData} disabled={loading} className="d-none d-md-block">
@@ -299,7 +299,7 @@ const AdminDashboard = () => {
         </div>
 
       {/* Modals ... */}
-      <Modal show={showUserModal} onHide={handleCloseUserModal} centered>
+      <Modal show={showUserModal} onHide={handleCloseUserModal} centered contentClassName="glass-effect">
         <Modal.Header closeButton><Modal.Title>創建新用戶</Modal.Title></Modal.Header>
         <Modal.Body>
           {modalError && <Alert variant="danger">{modalError}</Alert>}
@@ -327,7 +327,7 @@ const AdminDashboard = () => {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={showAggregationModal} onHide={() => setShowAggregationModal(false)} size="lg" centered>
+      <Modal show={showAggregationModal} onHide={() => setShowAggregationModal(false)} size="lg" centered contentClassName="glass-effect">
         <Modal.Header closeButton><Modal.Title>周報匯總結果</Modal.Title></Modal.Header>
         <Modal.Body>
           {aggregatedResult && (
@@ -347,7 +347,7 @@ const AdminDashboard = () => {
         </Modal.Footer>
       </Modal>
       
-      <Modal show={showConfirmDeleteModal} onHide={() => setShowConfirmDeleteModal(false)} centered>
+      <Modal show={showConfirmDeleteModal} onHide={() => setShowConfirmDeleteModal(false)} centered contentClassName="glass-effect">
         <Modal.Header closeButton>
           <Modal.Title>確認刪除</Modal.Title>
         </Modal.Header>

@@ -14,6 +14,11 @@ const AppLayout = () => {
 
   return (
     <div className="app-container">
+      <div className="aurora-background">
+        <div className="aurora-shape aurora-shape1"></div>
+        <div className="aurora-shape aurora-shape2"></div>
+        <div className="aurora-shape aurora-shape3"></div>
+      </div>
       <Header 
         toggleSidebar={toggleSidebar} 
         user={user}
