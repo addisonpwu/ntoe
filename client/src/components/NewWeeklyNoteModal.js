@@ -38,7 +38,7 @@ const NewWeeklyNoteModal = ({ show, handleClose, handleCreate, modalContext }) =
   };
 
   return (
-    <Modal show={show} onHide={handleClose}>
+    <Modal show={show} onHide={handleClose} contentClassName="glass-effect">
       <Modal.Header closeButton>
         <Modal.Title>選擇週記日期範圍</Modal.Title>
       </Modal.Header>

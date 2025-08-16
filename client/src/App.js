@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 
 import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './App.css';
+import './styles/glass-theme.css';
 
 import AppLayout from './components/AppLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainView from './components/MainView';
-import AdminDashboard from './components/AdminDashboard';
 import LoginPage from './pages/LoginPage';
+
+// Lazy load the AdminDashboard component
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 
 function App() {
   return (
@@ -35,7 +37,9 @@ function App() {
               path="admin" 
               element={
                 <ProtectedRoute adminOnly={true}>
-                  <div className="admin-dashboard-container"><AdminDashboard /></div>
+                  <Suspense fallback={<div className="p-4 text-center"><h5>載入中...</h5></div>}>
+                    <div className="admin-dashboard-container glass-effect"><AdminDashboard /></div>
+                  </Suspense>
                 </ProtectedRoute>
               }
             />

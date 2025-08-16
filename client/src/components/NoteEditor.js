@@ -285,7 +285,7 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDel
 
   if (!activeNote) {
     return (
-      <div className="note-editor-container d-flex flex-column">
+      <div className="note-editor-container glass-effect d-flex flex-column">
         <div className="empty-state">
           <div className="empty-state-icon"><FaRegStickyNote /></div>
           <h5>選擇或建立一篇新筆記</h5>
@@ -327,7 +327,7 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDel
   }
 
   return (
-    <div className="note-editor-container d-flex flex-column">
+    <div className="note-editor-container glass-effect d-flex flex-column">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <input type="text" className="form-control form-control-lg me-2" value={activeNote.title} onChange={handleTitleChange} readOnly={isReadOnly} />
         <div className="d-flex align-items-center">

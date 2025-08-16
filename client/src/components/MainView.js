@@ -14,6 +14,7 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
   const [showWeeklyNoteModal, setShowWeeklyNoteModal] = useState(false);
   const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [noteStatusFilter, setNoteStatusFilter] = useState('current');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState(null);
@@ -187,7 +188,7 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
 
   const confirmDelete = () => {
     if (!noteToDelete) return;
-
+    setIsDeleting(true);
     api.deleteNote(noteToDelete.id)
       .then(() => {
         toast.success('筆記已刪除。');
@@ -196,7 +197,8 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
         setShowConfirmDeleteModal(false);
         setNoteToDelete(null);
       })
-      .catch(() => toast.error('刪除筆記失敗。'));
+      .catch(() => toast.error('刪除筆記失敗。'))
+      .finally(() => setIsDeleting(false));
   };
 
   const handleArchive = () => {
@@ -309,6 +311,7 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
         handleClose={() => setShowConfirmDeleteModal(false)}
         handleConfirm={confirmDelete}
         noteTitle={noteToDelete?.title}
+        isDeleting={isDeleting}
       />
     </>
   );

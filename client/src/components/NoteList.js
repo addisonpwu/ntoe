@@ -40,7 +40,7 @@ const NoteList = ({
   const inboxNoteCount = notes.filter(n => n.folder_id === null).length;
 
   return (
-    <div className={`note-list-sidebar ${isOpen ? 'open' : ''}`}>
+    <div className={`note-list-sidebar glass-effect ${isOpen ? 'open' : ''}`}>
       <div className="note-list-container d-flex flex-column h-100">
         <div className="p-2">
           <Dropdown as="div" className="d-grid gap-2 mb-2">

@@ -1,0 +1,180 @@
+/* === Liquid Glass Theme === */
+
+/* 1. --- Root Variables --- */
+:root {
+  /* Font & Base */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --border-radius-large: 16px; /* For main containers */
+  --border-radius-medium: 12px; /* For cards and modals */
+  --border-radius-small: 8px;  /* For buttons and inputs */
+  --transition-speed: 0.3s;
+
+  /* Light Theme */
+  --bg-color-light: #f5f5f7;
+  --glass-bg-light: rgba(255, 255, 255, 0.75);
+  --glass-border-light: rgba(255, 255, 255, 0.9);
+  --text-primary-light: #1d1d1f;
+  --text-secondary-light: #6e6e73;
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --accent-primary-light: #007aff;
+  --accent-secondary-light: #f0f8ff;
+}
+
+/* 2. --- Base Styles --- */
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-color-light);
+  color: var(--text-primary-light);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+#root {
+  /* Ensure root takes full height for background to show */
+  min-height: 100vh;
+}
+
+/* 3. --- Core Glass Effect --- */
+.glass-effect {
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border-light);
+  box-shadow: 0 8px 32px 0 var(--shadow-light);
+  transition: background var(--transition-speed), border var(--transition-speed);
+}
+
+/* 4. --- Layout & Major Components --- */
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.main-content {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+/* Header */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  border-bottom: none; /* Remove default border */
+  padding: 0.75rem 1.5rem;
+  border-radius: 0; /* Full width */
+}
+/* Apply glass to header specifically for the blur effect */
+.app-header.glass-effect {
+  background: rgba(245, 245, 247, 0.7); /* Slightly different glass for header */
+  box-shadow: 0 1px 12px var(--shadow-light);
+}
+
+/* Sidebar / Main Content Areas */
+.note-list-sidebar,
+.admin-dashboard-container {
+  border-radius: var(--border-radius-large);
+  border: none; /* Remove default borders */
+  margin: 1rem;
+  padding: 1.5rem;
+}
+
+.note-list-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.note-editor-container {
+  border-radius: var(--border-radius-large);
+  border: none; /* Remove default borders */
+  margin: 1rem;
+  padding: 1.5rem;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+
+/* 5. --- UI Element Styling --- */
+
+/* Cards & Modals */
+.card,
+.modal-content {
+  border-radius: var(--border-radius-medium);
+  border: none;
+}
+
+/* Buttons */
+.btn {
+  border-radius: var(--border-radius-small);
+  border: none;
+  font-weight: 600;
+  transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
+}
+.btn-primary {
+  background-color: var(--accent-primary-light);
+  color: white;
+}
+
+/* Forms */
+.form-control,
+.form-select {
+  border-radius: var(--border-radius-small);
+  background-color: #ebebeb;
+  border: 1px solid transparent;
+  transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+.form-control:focus,
+.form-select:focus {
+  background-color: #fff;
+  border-color: var(--accent-primary-light);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25);
+}
+
+/* List Group */
+.list-group-item {
+  background-color: transparent;
+  border: none;
+  border-radius: var(--border-radius-small);
+  color: var(--text-secondary-light);
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+.list-group-item.active {
+  background-color: var(--accent-secondary-light) !important;
+  color: var(--accent-primary-light) !important;
+  font-weight: 700;
+}
+.list-group-item:hover {
+  background-color: var(--accent-secondary-light);
+  color: var(--text-primary-light);
+}
+
+/* Tables */
+.table {
+  background-color: transparent;
+  border-radius: var(--border-radius-medium);
+  overflow: hidden; /* For border-radius to work on tables */
+}
+.table thead th {
+  border-bottom: 2px solid var(--text-primary-light);
+}
+.table th, .table td {
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Remove conflicting base styles */
+.app-header .navbar-brand,
+.note-editor-container .form-control-lg {
+  color: var(--text-primary-light);
+}
+.text-muted {
+  color: var(--text-secondary-light) !important;
+}
