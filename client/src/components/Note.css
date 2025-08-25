@@ -1,0 +1,139 @@
+/* === NoteList Sidebar Styles === */
+
+.note-list-sidebar {
+  background-color: var(--surface-color);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* Remove default accordion styles */
+.accordion, .accordion-item, .accordion-header button {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0.75rem 0.5rem !important;
+  color: var(--text-color) !important;
+}
+
+.accordion-header button::after {
+  filter: brightness(0) saturate(100%) invert(39%) sepia(11%) saturate(1016%) hue-rotate(171deg) brightness(96%) contrast(89%);
+}
+
+.accordion-body {
+  padding: 0 !important;
+}
+
+.list-group-item {
+  border: none !important;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: var(--border-radius) !important;
+  margin-bottom: var(--spacing-xs) !important;
+}
+
+.list-group-item.action:hover {
+  background-color: var(--background-color);
+}
+
+.list-group-item.active {
+  background-color: #e9ecef !important; /* A light grey for active state */
+  color: var(--text-color) !important;
+  font-weight: 600;
+  border-left: 4px solid var(--primary-color) !important;
+  padding-left: calc(0.75rem - 4px) !important;
+}
+
+/* Note item specific styles */
+.note-list-item-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.note-title {
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: var(--spacing-xs);
+}
+
+.note-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted-color);
+}
+
+.note-tags .badge {
+  font-size: 0.7rem;
+  margin-top: var(--spacing-sm);
+  margin-right: var(--spacing-xs);
+}
+
+.note-delete-btn {
+  display: none; /* Hidden by default */
+  background: none;
+  border: none;
+  color: var(--text-muted-color);
+  padding: 2px;
+}
+
+.list-group-item:hover .note-delete-btn {
+  display: inline-block; /* Show on hover */
+}
+
+.note-delete-btn:hover {
+  color: var(--danger-color);
+}
+
+.note-list-scroll-area {
+  padding: 0 var(--spacing-sm);
+}
+/* === NoteEditor Component Styles === */
+
+.note-editor-container {
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  box-shadow: var(--box-shadow);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.note-editor-form {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.note-editor-form .form-control,
+.note-editor-form .rbt-input-main {
+  border: none;
+  box-shadow: none !important;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.note-editor-form .form-control:focus,
+.note-editor-form .rbt-input-main:focus {
+  border-color: transparent;
+}
+
+#note-title-input {
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+#note-content-textarea {
+  flex-grow: 1;
+  resize: none;
+  line-height: 1.6;
+}
+
+.note-editor-footer {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

@@ -1,0 +1,1 @@
+ALTER TABLE folders ADD COLUMN parent_id INT NULL, ADD CONSTRAINT fk_parent_id FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE;

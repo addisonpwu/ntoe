@@ -26,7 +26,9 @@ const AppLayout = () => {
       />
       <div className="main-content">
         {/* The Outlet will render the nested route's element (MainView or AdminDashboard) */}
-        <Outlet /> 
+        <main className="main-content">
+      <Outlet />
+    </main> 
       </div>
       <ToastContainer 
         position="bottom-right"

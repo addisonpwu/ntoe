@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Dropdown, Nav, Form, InputGroup, Badge, ListGroup, Accordion } from 'react-bootstrap';
-import { FaPlus, FaStickyNote, FaCalendarWeek, FaSearch, FaTimes, FaFolder, FaInbox, FaTag, FaFileAlt } from 'react-icons/fa';
+import { FaPlus, FaStickyNote, FaCalendarWeek, FaSearch, FaFolder, FaInbox, FaTag, FaFileAlt, FaTimes } from 'react-icons/fa';
+import './Note.css'; // Import the new styles
 
 const EmptyState = ({ message }) => (
   <div className="empty-state p-3 text-center">
@@ -16,6 +17,7 @@ const NoteList = ({
   activeNote, 
   onNoteSelect, 
   onNewNote, 
+  onNoteDelete, // Added prop for deleting
   isOpen, 
   noteStatusFilter, 
   setNoteStatusFilter, 
@@ -37,10 +39,15 @@ const NoteList = ({
     setShowNewFolderInput(false);
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-CA'); // YYYY-MM-DD for brevity
+  };
+
   const inboxNoteCount = notes.filter(n => n.folder_id === null).length;
 
   return (
-    <div className={`note-list-sidebar glass-effect ${isOpen ? 'open' : ''}`}>
+    <div className={`note-list-sidebar ${isOpen ? 'open' : ''}`}> {/* Removed glass-effect */}
       <div className="note-list-container d-flex flex-column h-100">
         <div className="p-2">
           <Dropdown as="div" className="d-grid gap-2 mb-2">
@@ -104,7 +111,6 @@ const NoteList = ({
                 )}
               </Accordion.Body>
             </Accordion.Item>
-            
           </Accordion>
         </div>
 
@@ -119,7 +125,7 @@ const NoteList = ({
           </Nav>
         </div>
 
-        <div className="note-list-scroll-area flex-grow-1 overflow-auto p-2">
+        <div className="note-list-scroll-area flex-grow-1">
           {notes.length > 0 ? (
             <ListGroup variant="flush">
               {notes.map(note => (
@@ -128,9 +134,26 @@ const NoteList = ({
                   action
                   active={activeNote?.id === note.id}
                   onClick={() => onNoteSelect(note)}
+                  className="d-flex justify-content-between align-items-start"
                 >
-                  <div className="note-title">{note.title}</div>
-                  
+                  <div className="note-list-item-content">
+                    <div className="note-title">{note.title}</div>
+                    <div className="note-meta">{formatDate(note.updated_at)}</div>
+                    {note.tags && note.tags.length > 0 && (
+                      <div className="note-tags">
+                        {note.tags.map(t => <Badge key={t.id} bg="secondary">{t.name}</Badge>)}
+                      </div>
+                    )}
+                  </div>
+                  <button 
+                    className="note-delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNoteDelete(note.id);
+                    }}
+                  >
+                    <FaTimes />
+                  </button>
                 </ListGroup.Item>
               ))}
             </ListGroup>

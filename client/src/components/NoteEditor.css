@@ -1,0 +1,99 @@
+/* === NoteEditor Component Styles === */
+
+.note-editor-container {
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-lg);
+}
+
+/* Editor Header */
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.editor-title-input {
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 1.75rem !important;
+  font-weight: 600 !important;
+  padding: 0 !important;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Editor Body */
+.editor-body {
+  flex-grow: 1;
+  overflow-y: auto; /* Allow content to scroll */
+}
+
+/* Side-by-side Markdown Editor */
+.side-by-side-editor {
+  display: flex;
+  height: 100%;
+  gap: var(--spacing-md);
+}
+
+.editor-pane, .preview-pane {
+  flex: 1;
+  width: 50%;
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+.editor-pane {
+  resize: none;
+  border: 1px solid var(--border-color);
+}
+
+/* Weekly Work List */
+.weekly-note-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.weekly-note-section h5 {
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: var(--spacing-sm);
+  display: inline-block;
+}
+
+.weekly-note-section .list-group-item {
+  padding: var(--spacing-sm) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.weekly-note-section .list-group-item:hover {
+  background-color: var(--background-color);
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: var(--text-muted-color);
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: var(--spacing-md);
+}

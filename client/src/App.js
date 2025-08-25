@@ -4,7 +4,6 @@ import { AuthProvider } from './context/AuthContext';
 
 import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './styles/glass-theme.css';
 
 import AppLayout from './components/AppLayout';
 import ProtectedRoute from './components/ProtectedRoute';

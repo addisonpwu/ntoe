@@ -7,7 +7,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import * as api from '../api';
 import { toast } from 'react-toastify';
+import './NoteEditor.css'; // Import the new styles
 
+// This is a complex sub-component, keeping it inside for now.
 const WeeklyWorkList = ({ title, items, setItems, isReadOnly, allTags }) => {
   const [newItemText, setNewItemText] = useState('');
   const [editingIndex, setEditingIndex] = useState(null);
@@ -84,7 +86,7 @@ const WeeklyWorkList = ({ title, items, setItems, isReadOnly, allTags }) => {
   };
 
   return (
-    <div className="weekly-note-section mb-4">
+    <div className="weekly-note-section">
       <h5>{title}</h5>
       <ul className="list-group mb-2">
         {(items || []).map((item, index) => (
@@ -207,15 +209,12 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDel
 
   const isReadOnly = false;
 
-  // Reset dirty flag when a new note is selected
   useEffect(() => {
     setIsDirty(false);
   }, [activeNote?.id]);
 
-  // Auto-save when dirty
   useEffect(() => {
     if (!isDirty || !activeNote || !activeNote.id) return;
-
     clearTimeout(saveTimerRef.current);
     setIsSaving(true);
     saveTimerRef.current = setTimeout(() => {
@@ -225,10 +224,7 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDel
         setIsSaving(false);
       });
     }, 1500);
-
-    return () => {
-      clearTimeout(saveTimerRef.current);
-    };
+    return () => clearTimeout(saveTimerRef.current);
   }, [activeNote, isDirty, onSave]);
 
   const handleContentChange = (content) => {
@@ -254,38 +250,26 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDel
 
   const handleNoteSubmit = () => {
     clearTimeout(saveTimerRef.current);
-    
-    const unfinishedItems = [
-      ...(activeNote.content.keyFocus || []),
-      ...(activeNote.content.regularWork || [])
-    ].filter(item => !item.completed);
-
+    const unfinishedItems = [...(activeNote.content.keyFocus || []), ...(activeNote.content.regularWork || [])].filter(item => !item.completed);
     if (unfinishedItems.length > 0) {
       toast.warn('您有未完成的項目，請先完成或使用「轉移」功能。');
       return;
     }
-
     setIsSaving(true);
     onSave()
-      .then(() => {
-        return api.submitNote(activeNote.id);
-      })
+      .then(() => api.submitNote(activeNote.id))
       .then(() => {
         toast.success('周報提交成功！');
         setIsDirty(false);
         onSubmissionComplete();
       })
-      .catch(() => {
-        toast.error('提交失敗，請稍後再試。');
-      })
-      .finally(() => {
-        setIsSaving(false);
-      });
+      .catch(() => toast.error('提交失敗，請稍後再試。'))
+      .finally(() => setIsSaving(false));
   };
 
   if (!activeNote) {
     return (
-      <div className="note-editor-container glass-effect d-flex flex-column">
+      <div className="note-editor-container">
         <div className="empty-state">
           <div className="empty-state-icon"><FaRegStickyNote /></div>
           <h5>選擇或建立一篇新筆記</h5>
@@ -299,13 +283,12 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDel
     if (activeNote.type === 'weekly') {
       const setKeyFocus = (items) => handleContentChange({ ...activeNote.content, keyFocus: items });
       const setRegularWork = (items) => handleContentChange({ ...activeNote.content, regularWork: items });
-
       return (
         <>
           <WeeklyWorkList title="重點及專項工作" items={activeNote.content.keyFocus || []} setItems={setKeyFocus} isReadOnly={isReadOnly} allTags={allTags} />
           <WeeklyWorkList title="常規工作" items={activeNote.content.regularWork || []} setItems={setRegularWork} isReadOnly={isReadOnly} allTags={allTags} />
         </>
-      )
+      );
     } else {
       return (
         <div className="side-by-side-editor">
@@ -317,35 +300,29 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDel
             readOnly={isReadOnly}
           />
           <div className="preview-pane markdown-preview">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {activeNote.content}
-            </ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{activeNote.content}</ReactMarkdown>
           </div>
         </div>
-      )
+      );
     }
-  }
+  };
 
   return (
-    <div className="note-editor-container glass-effect d-flex flex-column">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <input type="text" className="form-control form-control-lg me-2" value={activeNote.title} onChange={handleTitleChange} readOnly={isReadOnly} />
-        <div className="d-flex align-items-center">
-          {isSaving && <Spinner animation="border" size="sm" className="me-2" />}
+    <div className="note-editor-container">
+      <header className="editor-header">
+        <input type="text" className="editor-title-input form-control" value={activeNote.title} onChange={handleTitleChange} readOnly={isReadOnly} />
+        <div className="editor-toolbar">
+          {isSaving && <Spinner animation="border" size="sm" />}
           
           {activeNote.type === 'weekly' && activeNote.status === 'draft' && (
-            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-submit">提交周報</Tooltip>}>
-              <Button variant="success" onClick={handleNoteSubmit} className="me-2">
-                <FaPaperPlane />
-              </Button>
+            <OverlayTrigger placement="top" overlay={<Tooltip>提交周報</Tooltip>}>
+              <Button variant="success" onClick={handleNoteSubmit}><FaPaperPlane /></Button>
             </OverlayTrigger>
           )}
 
-          <Dropdown className="me-2">
-            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-move">移動</Tooltip>}>
-              <Dropdown.Toggle variant="outline-secondary" id="dropdown-move" disabled={isReadOnly}>
-                <FaFolderOpen />
-              </Dropdown.Toggle>
+          <Dropdown>
+            <OverlayTrigger placement="top" overlay={<Tooltip>移動</Tooltip>}>
+              <Dropdown.Toggle variant="outline-secondary" disabled={isReadOnly}><FaFolderOpen /></Dropdown.Toggle>
             </OverlayTrigger>
             <Dropdown.Menu>
               <Dropdown.Item onClick={() => onMoveNote(null)}>未分類</Dropdown.Item>
@@ -356,35 +333,29 @@ const NoteEditor = ({ activeNote, setActiveNote, allTags, folders, onSave, onDel
           </Dropdown>
           
           {activeNote.type === 'weekly' && !activeNote.archived && (
-            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-carryover">轉移</Tooltip>}>
-              <Button variant="outline-secondary" onClick={onCarryOver} className="me-2" disabled={isReadOnly}>
-                <FaArrowRight />
-              </Button>
+            <OverlayTrigger placement="top" overlay={<Tooltip>轉移</Tooltip>}>
+              <Button variant="outline-secondary" onClick={onCarryOver} disabled={isReadOnly}><FaArrowRight /></Button>
             </OverlayTrigger>
           )}
 
           {activeNote.archived ? (
-            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-unarchive">還原</Tooltip>}>
-              <Button variant="outline-secondary" onClick={onUnarchive} className="me-2">
-                <FaInbox />
-              </Button>
+            <OverlayTrigger placement="top" overlay={<Tooltip>還原</Tooltip>}>
+              <Button variant="outline-secondary" onClick={onUnarchive}><FaInbox /></Button>
             </OverlayTrigger>
           ) : (
-            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-archive">封存</Tooltip>}>
-              <Button variant="outline-secondary" onClick={onArchive} className="me-2" disabled={isReadOnly}>
-                <FaArchive />
-              </Button>
+            <OverlayTrigger placement="top" overlay={<Tooltip>封存</Tooltip>}>
+              <Button variant="outline-secondary" onClick={onArchive} disabled={isReadOnly}><FaArchive /></Button>
             </OverlayTrigger>
           )}
 
-          <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-delete">刪除</Tooltip>}>
-            <Button variant="outline-danger" onClick={onDelete} disabled={isReadOnly}>
-              <FaTrash />
-            </Button>
+          <OverlayTrigger placement="top" overlay={<Tooltip>刪除</Tooltip>}>
+            <Button variant="outline-danger" onClick={onDelete} disabled={isReadOnly}><FaTrash /></Button>
           </OverlayTrigger>
         </div>
+      </header>
+      <div className="editor-body">
+        {renderEditor()}
       </div>
-      {renderEditor()}
     </div>
   );
 };
