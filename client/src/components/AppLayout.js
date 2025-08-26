@@ -24,12 +24,9 @@ const AppLayout = () => {
         user={user}
         onLogout={logout}
       />
-      <div className="main-content">
-        {/* The Outlet will render the nested route's element (MainView or AdminDashboard) */}
-        <main className="main-content">
-      <Outlet />
-    </main> 
-      </div>
+      <main className="main-content">
+        <Outlet />
+      </main>
       <ToastContainer 
         position="bottom-right"
         autoClose={3000}

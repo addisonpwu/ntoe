@@ -1,22 +1,22 @@
-/* === Liquid Glass Theme v2 (Advanced) === */
+/* === Converted to White Theme from Glass === */
 
 /* 1. --- Root Variables --- */
 :root {
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  --border-radius-large: 20px;
-  --border-radius-medium: 16px;
-  --border-radius-small: 12px;
+  --border-radius-large: 12px;
+  --border-radius-medium: 8px;
+  --border-radius-small: 6px;
   --transition-speed: 0.4s;
 
-  /* Theme Colors */
-  --bg-color: #121212; /* Dark background for effect */
-  --glass-bg: linear-gradient(to right bottom, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --text-primary: #EAEAEA;
-  --text-secondary: #B0B0B0;
-  --shadow-color: rgba(0, 0, 0, 0.3);
+  /* Theme Colors - Converted to White */
+  --bg-color: #FFFFFF; /* Pure White background */
+  --surface-color: #FFFFFF; /* White for surfaces */
+  --border-color: #E5E7EB; /* Light Gray */
+  --text-primary: #111827; /* Dark Gray */
+  --text-secondary: #6B7280; /* Medium Gray */
+  --shadow-color: rgba(0, 0, 0, 0.05);
   --accent-primary: #0A84FF;
-  --accent-secondary: rgba(10, 132, 255, 0.1);
+  --accent-secondary: #EFF6FF; /* Light Blue */
 }
 
 /* 2. --- Base & Aurora Background --- */
@@ -26,7 +26,7 @@ body {
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden; /* Prevent scrollbars from aurora shapes */
+  overflow: hidden;
 }
 
 #root {
@@ -36,74 +36,29 @@ body {
 }
 
 .aurora-background {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  z-index: -1; /* Behind all content */
+  display: none; /* Hide the aurora effect */
 }
 
-.aurora-shape {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.5;
-}
-
-.aurora-shape1 {
-  width: 400px; height: 400px;
-  background: #0A84FF;
-  top: 10%; left: 10%;
-  animation: move-aurora1 20s infinite alternate ease-in-out;
-}
-
-.aurora-shape2 {
-  width: 300px; height: 300px;
-  background: #5E5CE6;
-  top: 50%; left: 60%;
-  animation: move-aurora2 25s infinite alternate ease-in-out;
-}
-
-.aurora-shape3 {
-  width: 350px; height: 350px;
-  background: #BF5AF2;
-  bottom: 5%; right: 5%;
-  animation: move-aurora3 18s infinite alternate ease-in-out;
-}
-
-@keyframes move-aurora1 {
-  from { transform: translate(-100px, -50px) rotate(0deg); }
-  to { transform: translate(100px, 100px) rotate(180deg); }
-}
-@keyframes move-aurora2 {
-  from { transform: translate(50px, 100px) rotate(0deg); }
-  to { transform: translate(-100px, -150px) rotate(270deg); }
-}
-@keyframes move-aurora3 {
-  from { transform: translate(100px, -100px) rotate(0deg); }
-  to { transform: translate(-50px, 50px) rotate(360deg); }
-}
-
-
-/* 3. --- Enhanced Glass Effect (Replaces .glass-effect) --- */
+/* 3. --- Main Surface Effect (Replaces .glass-effect) --- */
 .glass-effect {
-  background: var(--glass-bg);
-  backdrop-filter: blur(25px) saturate(150%);
-  -webkit-backdrop-filter: blur(25px) saturate(150%);
-  border: 1px solid var(--glass-border);
-  /* Inset highlight for top edge + soft outer shadow */
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 10px 40px var(--shadow-color);
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px var(--shadow-color);
   transition: background 0.3s, border 0.3s, box-shadow 0.3s;
 }
 
 /* 4. --- Layout & Major Components --- */
 
-.app-container { display: flex; flex-direction: column; height: 100vh; background: transparent; }
+.app-container { display: flex; flex-direction: column; height: 100vh; background: var(--bg-color); }
 .main-content { display: flex; flex-grow: 1; overflow: hidden; }
 
 .app-header.glass-effect {
   position: sticky; top: 0; z-index: 1020;
   border-radius: 0;
-  border-bottom: 1px solid var(--glass-border);
-  background: rgba(30, 30, 30, 0.5);
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  background: var(--surface-color);
 }
 
 .note-list-sidebar {
@@ -131,7 +86,7 @@ body {
 .modal-content.glass-effect { border-radius: var(--border-radius-medium); }
 
 .btn { border-radius: var(--border-radius-small); border: none; font-weight: 600; transition: all 0.2s ease-in-out; }
-.btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+.btn:hover { transform: scale(1.02); filter: brightness(1.05); }
 .btn-primary { background-color: var(--accent-primary); color: white; }
 .btn-success { background-color: #30D158; color: white; }
 .btn-outline-danger { border: 1px solid #FF453A; color: #FF453A; }
@@ -139,12 +94,12 @@ body {
 
 .form-control, .form-select {
   border-radius: var(--border-radius-small);
-  background-color: rgba(0,0,0,0.2);
-  border: 1px solid var(--glass-border);
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-color);
   color: var(--text-primary);
 }
 .form-control:focus, .form-select:focus {
-  background-color: rgba(0,0,0,0.3);
+  background-color: #FFFFFF;
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px var(--accent-secondary);
 }
@@ -189,51 +144,11 @@ body {
   box-shadow: none;
 }
 .accordion-button::after {
-  filter: invert(1) grayscale(1) brightness(2);
+  filter: invert(39%) sepia(11%) saturate(1016%) hue-rotate(171deg) brightness(96%) contrast(89%);
 }
 
-/* Tabs in Admin Panel */
-.nav-tabs {
-  border-bottom: 1px solid var(--glass-border);
-  flex-shrink: 0; /* Prevent tabs from shrinking */
-}
-.nav-tabs .nav-link {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-}
-.nav-tabs .nav-link.active {
-  background: var(--accent-secondary);
-  border: 1px solid var(--glass-border);
-  border-bottom-color: transparent;
-  color: var(--accent-primary);
-  font-weight: 600;
-}
-.nav-tabs .nav-link:hover {
-  border-color: var(--glass-border);
-}
-.tab-content, .tab-pane {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding-top: 1rem;
-}
-
-/* Card in Admin Panel */
-.card {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid var(--glass-border) !important;
-  border-radius: var(--border-radius-medium) !important;
-}
-
-/* Table in Admin Panel */
-.table {
-  background-color: transparent !important;
-  color: var(--text-primary) !important;
-}
-.table th, .table td {
-  border-color: var(--glass-border) !important;
-}
-.table-hover tbody tr:hover {
-    background-color: var(--accent-secondary) !important;
-    color: var(--text-primary) !important;
+/* Make all list items inside weekly editor white */
+.weekly-note-section .list-group-item {
+    background-color: #FFFFFF;
+    border: 1px solid var(--border-color) !important;
 }

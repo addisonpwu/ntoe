@@ -267,6 +267,14 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
       .catch(() => toast.error('移動筆記失敗。'));
   };
 
+  const handleDeleteFromList = (noteId) => {
+    const note = notes.find(n => n.id === noteId);
+    if (note) {
+      setNoteToDelete(note);
+      setShowConfirmDeleteModal(true);
+    }
+  };
+
   return (
     <>
       <NoteList 
@@ -276,6 +284,7 @@ const MainView = ({ isSidebarOpen, setSidebarOpen }) => {
         activeNote={activeNote}
         onNoteSelect={handleNoteSelect}
         onNewNote={handleNewNote}
+        onNoteDelete={handleDeleteFromList}
         isOpen={isSidebarOpen}
         noteStatusFilter={noteStatusFilter}
         setNoteStatusFilter={setNoteStatusFilter}
